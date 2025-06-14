@@ -1,7 +1,7 @@
 # LiveDocs
 
 
-Realtime doc editior from scratch with colloboration
+Realtime DOC editor from scratch with colloboration
 
 
 
