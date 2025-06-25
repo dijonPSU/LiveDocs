@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+
+/*
+
+WILL CHANGE THIS TO A LOADING PAGE WITH A LOADING BAR, THEN AUTO REDIRECT TO HOMEPAGE
+
+
+*/
+
 
 function CallbackPage() {
+    const navigate = useNavigate();
     const [token, setToken] = useState(null);
     const [error, setError] = useState(null);
 
@@ -16,8 +27,6 @@ function CallbackPage() {
             // store token in local storage for now
             localStorage.setItem('googleAccessToken', accessToken);
 
-            // redirect to dashboard
-            // window.location.href = '/dashboard';
         } else if (params.has('error')) {
             setError(params.get('error'));
         }
@@ -28,7 +37,7 @@ function CallbackPage() {
             <div className="callback-page">
                 <h1>Authentication Error</h1>
                 <p>Error: {error}</p>
-                <button onClick={() => window.location.href = '/'}>
+                <button onClick={() => navigate('/')}>
                     Return to Login
                 </button>
             </div>
@@ -40,7 +49,7 @@ function CallbackPage() {
             <div className="callback-page">
                 <h1>Authentication Successful</h1>
                 <p>You have successfully authenticated with Google.</p>
-                <button onClick={() => window.location.href = '/Homepage'}>
+                <button onClick={() => navigate('/Homepage')}>
                     Continue to App
                 </button>
             </div>
