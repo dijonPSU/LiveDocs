@@ -6,10 +6,10 @@ import "./DocumentPage.css";
 import io from "socket.io-client";
 
 
-export default function DocumentPage() {
+export default function DocumentPage({documentName = "Untitled document"}) {
     const navigate = useNavigate();
     const [socket, setSocket] = useState(null); // so we can access socket from anywhere
-    const [documentTitle, setDocumentTitle] = useState("Untitled document");
+    const [documentTitle, setDocumentTitle] = useState(documentName);
     const editorRef = useRef(null);
     const quillRef = useRef(null);
 

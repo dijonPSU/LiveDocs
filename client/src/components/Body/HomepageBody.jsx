@@ -2,6 +2,7 @@ import React,  {useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateDocumentModal from './CreateDocumentModal';
 import './HomepageBody.css';
+import DocumentPage from '../../pages/DocumentPage';
 
 const HomepageBody = () => {
     const navigate = useNavigate();
