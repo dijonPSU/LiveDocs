@@ -40,7 +40,7 @@ function CallbackPage() {
             <div className="callback-page">
                 <h1>Authentication Successful</h1>
                 <p>You have successfully authenticated with Google.</p>
-                <button onClick={() => window.location.href = '/'}>
+                <button onClick={() => window.location.href = '/Homepage'}>
                     Continue to App
                 </button>
             </div>
