@@ -24,7 +24,8 @@ function App() {
     switch (currentPath) {
       case '/callback':
         return <CallbackPage />;
-      case '/':
+      case '/Homepage':
+          return <Homepage />;
       default:
         return <LoginPage />;
     }
@@ -34,6 +35,7 @@ function App() {
     // {renderPage()}    <Homepage />
     <>
       {renderPage()}
+
     </>
   );
 }
