@@ -1,3 +1,13 @@
+import io from "socket.io-client";
+
+
+
+const connectToWebSocket = () => {
+    const socket = io("http://localhost:3001");
+    return socket;
+}
+
+
 const get = async (URL) => {
     const response = await fetch(URL);
     const data = await response.json();
@@ -40,4 +50,4 @@ const deleteRequest = async (URL) => {
     return responseData;
 }
 
-export { get, post, put, deleteRequest };
+export { get, post, put, deleteRequest, connectToWebSocket };
