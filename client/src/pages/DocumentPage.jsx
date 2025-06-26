@@ -1,30 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 import Quill from "quill";
+import { connectToWebSocket } from "../utils/utils";
 import { useNavigate } from "react-router";
 import "quill/dist/quill.snow.css";
 import "./DocumentPage.css";
-import io from "socket.io-client";
 
 
-export default function DocumentPage() {
+export default function DocumentPage({ documentName = "Untitled document" }) {
     const navigate = useNavigate();
     const [socket, setSocket] = useState(null); // so we can access socket from anywhere
-    const [documentTitle, setDocumentTitle] = useState("Untitled document");
+    const [documentTitle, setDocumentTitle] = useState(documentName);
     const editorRef = useRef(null);
     const quillRef = useRef(null);
 
     // connect to server
     useEffect(() => {
-        const socketio = io("http://localhost:3001");
+        const socketio = connectToWebSocket();
         setSocket(socketio);
 
         return () => {
             socketio.disconnect();
         };
+
     }, []);
 
 
-    //  quill editor { For now until we have a custom text editor :( }
+    //  quill editor { For now until we have a custom text editor }
     useEffect(() => {
         if (editorRef.current && !quillRef.current) {
             const quillOptions = {
@@ -55,7 +56,6 @@ export default function DocumentPage() {
             console.log("Sending changes to server:", delta);
             socket.emit("send-changes", delta);
         };
-
         quillRef.current.on("text-change", handleTextChange);
 
         return () => {
@@ -65,14 +65,12 @@ export default function DocumentPage() {
 
 
     // use effect for receiving changes from server
-
     useEffect(() => {
         if (socket == null || quillRef.current == null) return;
 
         const handleServerChanges = (delta) => {
             quillRef.current.updateContents(delta);
         };
-
         socket.on("receive-changes", handleServerChanges);
 
         return () => {
@@ -105,8 +103,8 @@ export default function DocumentPage() {
 
                 <div className="document-actions">
                     <button
-                    className="document-button back-to-homepage-button"
-                    onClick={() => navigate('/Homepage')}
+                        className="document-button back-to-homepage-button"
+                        onClick={() => navigate('/Homepage')}
                     >
                         Back To Homepage
                     </button>

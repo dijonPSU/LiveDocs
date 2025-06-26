@@ -9,7 +9,6 @@ WILL CHANGE THIS TO A LOADING PAGE WITH A LOADING BAR, THEN AUTO REDIRECT TO HOM
 
 */
 
-
 function CallbackPage() {
     const navigate = useNavigate();
     const [token, setToken] = useState(null);
