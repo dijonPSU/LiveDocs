@@ -4,7 +4,6 @@ import { connectToWebSocket } from "../utils/utils";
 import { useNavigate } from "react-router";
 import "quill/dist/quill.snow.css";
 import "./DocumentPage.css";
-import io from "socket.io-client";
 
 
 export default function DocumentPage({ documentName = "Untitled document" }) {
@@ -57,7 +56,6 @@ export default function DocumentPage({ documentName = "Untitled document" }) {
             console.log("Sending changes to server:", delta);
             socket.emit("send-changes", delta);
         };
-
         quillRef.current.on("text-change", handleTextChange);
 
         return () => {
@@ -67,14 +65,12 @@ export default function DocumentPage({ documentName = "Untitled document" }) {
 
 
     // use effect for receiving changes from server
-
     useEffect(() => {
         if (socket == null || quillRef.current == null) return;
 
         const handleServerChanges = (delta) => {
             quillRef.current.updateContents(delta);
         };
-
         socket.on("receive-changes", handleServerChanges);
 
         return () => {

@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import LoginPage from './pages/loginPage';
 import CallbackPage from './pages/CallbackPage';
 import Homepage from './pages/Homepage';
