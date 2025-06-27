@@ -1,22 +1,39 @@
-const DocumentOptionsModal = () => {
+import React, { useEffect, useRef } from 'react';
+
+export default function DocumentOptionsModal({ closeModal, position }) {
+    const modalRef = useRef(null);
+
+    useEffect(() => {
+        // closes modal when clicked outside of modal
+        function handleClickOutside(event) {
+            if (modalRef.current && !modalRef.current.contains(event.target)) {
+                closeModal();
+            }
+        }
+
+
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [closeModal]);
+
+    // calculate position styles
+    const positionStyle = position ? {
+        position: 'absolute',
+        top: `${position.bottom}px`,
+        left: `${position.left}px`,
+        zIndex: 1000,
+    } : {};
+
     return (
-        <div className = "modal-overlay active">
-            <div className="modal-content">
-                <div className = "modal-header">
-                    <h2 className = "modal-title">Create Document</h2>
-                </div>
-                <div className = "modal-body">
-                    <div className = "form-group">
-                        <label htmlFor="document-name">Document Name</label>
-                        <input type="text" className="form-control" id="document-name" placeholder="Enter document name" />
-                    </div>
-                    <div className = "document-buttons">
-                        <button type="button" className="btn btn-primary" onClick={handleCreateDocument}>Create</button>
-                        <button type="button" className="btn btn-secondary" data-dismiss="modal" onClick={closeModal} >Cancel</button>
-                    </div>
-                </div>
+        <div ref={modalRef} className="document-options-dropdown" style={positionStyle}>
+            <div className="edit-options-modal-content">
+                <button>Rename</button>
+                <button>Remove</button>
+                <button>Open In New Tab</button>
             </div>
         </div>
     );
-
 }

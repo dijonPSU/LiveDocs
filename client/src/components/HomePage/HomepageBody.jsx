@@ -1,12 +1,14 @@
-import React,  {useState} from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateDocumentModal from '../DocumentPage/CreateDocumentModal';
 import './HomepageBody.css';
-import DocumentPage from '../../pages/DocumentPage';
+import DocumentOptionsModal from './HomepageDocumentOptionsModal';
 
 const HomepageBody = () => {
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDocumentOptionsModalOpen, setIsDocumentOptionsModalOpen] = useState(false);
+    const [modalPosition, setModalPosition] = useState(null);
 
     // Sample dummy documents
     const dummyDocuments = [
@@ -27,7 +29,22 @@ const HomepageBody = () => {
         warn("test");
     }
 
+    const handleCloseDocumentOptionsModal = () => {
+        setIsDocumentOptionsModalOpen(false);
+    }
 
+    const handleDocumentOptionsClick = (e) => {
+        e.stopPropagation();
+        const buttonRect = e.currentTarget.getBoundingClientRect();
+        setModalPosition({
+            left: buttonRect.left,
+            bottom: buttonRect.bottom
+        });
+        setIsDocumentOptionsModalOpen(true);
+    }
+
+
+    // will breakdown into smaller components
     return (
         <div className="homepage-body">
             <div className="homepage-content">
@@ -37,7 +54,7 @@ const HomepageBody = () => {
                     </div>
 
                     <div className="documents-grid">
-                        <div className="document-card create-new" onClick={() => {toggleModal()}}> {/* onClick={() => navigate('/DocumentPage')} */}
+                        <div className="document-card create-new" onClick={() => { toggleModal() }}> {/* onClick={() => navigate('/DocumentPage')} */}
                             <div className="document-preview blank">
                                 <div className="plus-icon">+</div>
                             </div>
@@ -59,7 +76,12 @@ const HomepageBody = () => {
                                     <p className="document-title">{doc.title}</p>
                                     <p className="document-date">Last edited {doc.lastEdited}</p>
                                     <div className="document-edit">
-                                        <button className="document-button"><strong>...</strong></button>
+                                        <button
+                                            onClick={handleDocumentOptionsClick}
+                                            className="document-button"
+                                        >
+                                            <strong>EDIT</strong>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -67,7 +89,13 @@ const HomepageBody = () => {
                     </div>
                 </section>
             </div>
-            {isModalOpen && <CreateDocumentModal closeModal={handleCloseModal}/>}
+            {isModalOpen && <CreateDocumentModal closeModal={handleCloseModal} />}
+            {isDocumentOptionsModalOpen &&
+                <DocumentOptionsModal
+                    closeModal={handleCloseDocumentOptionsModal}
+                    position={modalPosition}
+                />
+            }
         </div>
     );
 };

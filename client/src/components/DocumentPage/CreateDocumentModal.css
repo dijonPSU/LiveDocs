@@ -30,11 +30,22 @@
   animation: scaleIn 0.3s ease forwards;
 }
 
-.modal-header {
-  padding: 20px;
-  border-bottom: 1px solid #eaeaea;
-  background-color: #f8f9fa;
+
+.edit-options-modal-content {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  max-width: 480px;
+  border-radius: 8px;
+  overflow: hidden;
+  animation: scaleIn 0.3s ease forwards;
 }
+
+.edit-options-modal-content button:hover{
+  transform: scale(1.05);
+}
+
+
 
 .modal-title {
   margin: 0;
