@@ -22,36 +22,11 @@
 
 .logo-container h1 {
     font-size: 22px;
-    color: #4285f4;
+    color: #1a237e;
     margin: 0;
     font-weight: 500;
 }
 
-/*
-.document-title-container {
-    flex: 1;
-    max-width: 300px;
-    margin-right: 24px;
-}
-
-.document-title {
-    border: none;
-    font-size: 18px;
-    padding: 8px 12px;
-    width: 100%;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-}
-
-.document-title:hover {
-    background-color: #f1f3f4;
-}
-
-.document-title:focus {
-    background-color: #f1f3f4;
-    outline: none;
-}
-*/
 
 
 /* Header actions (search and buttons) */
