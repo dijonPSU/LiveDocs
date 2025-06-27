@@ -1,6 +1,6 @@
 import React from 'react';
-import Header from '../components/Header/HomepageHeader.jsx';
-import HomepageBody from '../components/Body/HomepageBody.jsx';
+import Header from '../components/HomePage/HomepageHeader.jsx';
+import HomepageBody from '../components/HomePage/HomepageBody.jsx';
 import './Homepage.css';
 
 const Homepage = () => {

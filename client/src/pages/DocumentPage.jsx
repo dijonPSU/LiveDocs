@@ -1,12 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import Quill from "quill";
+import { useLocation } from "react-router-dom";
 import { connectToWebSocket } from "../utils/utils";
 import { useNavigate } from "react-router";
 import "quill/dist/quill.snow.css";
 import "./DocumentPage.css";
 
 
-export default function DocumentPage({ documentName = "Untitled document" }) {
+export default function DocumentPage() {
+    // get document name from navigation state
+    const location = useLocation();
+    const { state } = location;
+    const {documentName} = state || "Untitled Document";
+
+
     const navigate = useNavigate();
     const [socket, setSocket] = useState(null); // so we can access socket from anywhere
     const [documentTitle, setDocumentTitle] = useState(documentName);
