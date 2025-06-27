@@ -13,7 +13,6 @@ const Header = () => {
                         <input className="search-input" placeholder="Search" />
                     </div>
                     <div className="header-buttons">
-                        <button className="header-button share-button">Share</button>
                         <button className="header-profile">DM</button>
                     </div>
                 </div>

@@ -7,8 +7,7 @@ export default function CreateDocumentModal({ closeModal }) {
     const navigate = useNavigate();
 
     const handleCreateDocument = () => {
-        navigate('/DocumentPage')
-
+        navigate('/DocumentPage', {state: {documentName: document.getElementById('document-name').value}})
     }
 
     return (
