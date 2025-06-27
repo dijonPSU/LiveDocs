@@ -1,6 +1,5 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import DocumentPage from "../../pages/DocumentPage";
 import "./CreateDocumentModal.css";
 
 
