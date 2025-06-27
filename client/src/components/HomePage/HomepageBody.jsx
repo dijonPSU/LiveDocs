@@ -58,6 +58,9 @@ const HomepageBody = () => {
                                 <div className="document-info">
                                     <p className="document-title">{doc.title}</p>
                                     <p className="document-date">Last edited {doc.lastEdited}</p>
+                                    <div className="document-edit">
+                                        <button className="document-button"><strong>...</strong></button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
