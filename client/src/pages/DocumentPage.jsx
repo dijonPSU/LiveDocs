@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Quill from "quill";
 import { useLocation } from "react-router-dom";
-import { connectToWebSocket } from "../utils/utils";
+import { connectToWebSocket } from "../utils/dataFetcher";
 import { useNavigate } from "react-router";
 import "quill/dist/quill.snow.css";
 import "./DocumentPage.css";
@@ -11,7 +11,7 @@ export default function DocumentPage() {
     // get document name from navigation state
     const location = useLocation();
     const { state } = location;
-    const {documentName} = state || "Untitled Document";
+    const { documentName } = state || "Untitled Document";
 
 
     const navigate = useNavigate();

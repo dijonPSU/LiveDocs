@@ -1,6 +1,6 @@
 import React from 'react';
 import GooglePathImage from './Path Images/GooglePathImage.jsx';
-import { handleSignIn } from '../utils/utils.js';
+import { handleSignIn } from '../utils/dataFetcher.js';
 
 function OAuthSignIn() {
     return (
