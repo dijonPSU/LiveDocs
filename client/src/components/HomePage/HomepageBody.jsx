@@ -54,7 +54,7 @@ const HomepageBody = () => {
                     </div>
 
                     <div className="documents-grid">
-                        <div className="document-card create-new" onClick={() => { toggleModal() }}> {/* onClick={() => navigate('/DocumentPage')} */}
+                        <div className="document-card create-new" onClick={() => { toggleModal() }}>
                             <div className="document-preview blank">
                                 <div className="plus-icon">+</div>
                             </div>
