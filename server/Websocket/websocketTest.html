@@ -9,7 +9,22 @@
   <script>
     const messages = document.getElementById("messages")
     const socket = new WebSocket('ws://localhost:8080')
-    socket.onopen = () => console.log('Connected to WebSocket server')
+    socket.onopen = (event) => {
+        console.log('Connected to WebSocket server')
+        const id = Math.floor(Math.random() * 1000000)
+        const data = JSON.stringify({
+          id: id,
+          address: {
+            type: "ipv4",
+            ip: "129.0.0.1",
+            port: 8080
+          },
+          message: "hello"
+        })
+        socket.send(data)
+
+
+    }
     socket.onerror = (error) => console.error(`Web Socket error`, error)
     socket.onclose = (event) => console.log('Disconnected from WebSocket server')
   </script>
