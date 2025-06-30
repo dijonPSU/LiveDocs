@@ -85,22 +85,25 @@ function readSocketData(socket) {
   if(LengthIndicator <= MAX_7_BITS_INT_MARKER){
     messageLength = LengthIndicator;
   } else {
-    console.error("Invalid message length");
+    console.error("Message length not supported right now");
   }
 
   const maskKey = socket.read(MASK_KEY_LENGTH);
   const encodedMessage = socket.read(messageLength);
-  const decoded = unMask(encodedMessage, maskKey);
-  console.log(decoded.toString());
+  const decoded = unMask(encodedMessage, maskKey).toString('utf-8');
+  const data = JSON.parse(decoded);
+
+  console.log(`recieved message: ${data.message}`);
 }
 
 
 function unMask(encodedBuffer, maskKey) {
   const unmaskedData = Buffer.from(encodedBuffer); // create a copy of the buffer
 
-  // XOR the data with the mask key
+  // XOR the data with the mask key to decode it
+  // i & MASK_KEY_LENGTH is to ensure we don't go out of bounds. should only be 0, 1, 2, 3
   for (let i = 0; i < encodedBuffer.length; i++) {
-    unmaskedData[i] = encodedBuffer[i] ^ maskKey[i % maskKey.length];
+    unmaskedData[i] = encodedBuffer[i] ^ maskKey[i % MASK_KEY_LENGTH];
   }
   return unmaskedData;
 }
