@@ -7,8 +7,6 @@ const PORT = 8080;
 
 const WEBSOCKET_MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 const MAX_7_BITS_INT_MARKER  = 125;
-const MAX_16_BITS_INT_MARKER = 126;
-const MAX_64_BITS_INT_MARKER = 127;
 const MASK_KEY_LENGTH = 4;
 const FIRST_BIT = 128;
 
@@ -37,7 +35,16 @@ function onSocketUpgrade(req, socket, head) {
   console.log(`Received WebSocket connection from ${webClientSocketKey}`);
   const headers = prepareHandShakeResponse(webClientSocketKey);
   socket.write(headers);
+
+
+  // test data
+  const testData = JSON.parse('{"message": "Hello from the server!"}');
+
   socket.on('readable', () => readSocketData(socket));
+  const msg = JSON.stringify({
+    message: testData.message
+  });
+  sendSocketData(socket, msg);
 
   // Add event listener for error
   socket.on('error', (error) => {
@@ -72,28 +79,49 @@ function prepareHandShakeResponse(webClientSocketKey) {
 
 
 function readSocketData(socket) {
-  // consume optcode (first byte)
-  socket.read(1);
+  // Read first byte (opcode + FIN)
+  const firstByteBuffer = socket.read(1);
+  if (!firstByteBuffer) return; // <-- socket is closed or no data
 
-  const [payloadLength] = socket.read(1);
+  const secondByteBuffer = socket.read(1);
+  if (!secondByteBuffer) return;
 
-  // first bit is always 1, so we can ignore it (1 bit = 128)
-  const LengthIndicator = payloadLength - FIRST_BIT;
+  const [payloadLength] = secondByteBuffer;
+  const lengthIndicator = payloadLength - FIRST_BIT;
 
   let messageLength = 0;
-
-  if(LengthIndicator <= MAX_7_BITS_INT_MARKER){
-    messageLength = LengthIndicator;
+  if (lengthIndicator <= MAX_7_BITS_INT_MARKER) {
+    messageLength = lengthIndicator;
   } else {
-    console.error("Message length not supported right now");
+    console.error("Message length not supported");
+    return;
   }
 
   const maskKey = socket.read(MASK_KEY_LENGTH);
-  const encodedMessage = socket.read(messageLength);
-  const decoded = unMask(encodedMessage, maskKey).toString('utf-8');
-  const data = JSON.parse(decoded);
+  if (!maskKey) return;
 
-  console.log(`recieved message: ${data.message}`);
+  const encodedMessage = socket.read(messageLength);
+  if (!encodedMessage) return;
+
+  const decoded = unMask(encodedMessage, maskKey).toString('utf-8').trim();
+
+  // to handle JSON or raw text
+  if (decoded.startsWith('{') && decoded.endsWith('}')) {
+    try {
+      const data = JSON.parse(decoded);
+      console.log(`Received JSON message:`, data);
+      const response = JSON.stringify({
+        message: data
+      });
+
+      sendSocketData(socket, response);
+    } catch (e) {
+      console.error(`Invalid JSON format: ${decoded}`);
+    }
+  } else {
+    console.log(`Received plain text message: "${decoded}"`);
+  }
+
 }
 
 
@@ -101,9 +129,54 @@ function unMask(encodedBuffer, maskKey) {
   const unmaskedData = Buffer.from(encodedBuffer); // create a copy of the buffer
 
   // XOR the data with the mask key to decode it
-  // i & MASK_KEY_LENGTH is to ensure we don't go out of bounds. should only be 0, 1, 2, 3
+  // i % MASK_KEY_LENGTH is to ensure we don't go out of bounds. should only be 0, 1, 2, 3
   for (let i = 0; i < encodedBuffer.length; i++) {
     unmaskedData[i] = encodedBuffer[i] ^ maskKey[i % MASK_KEY_LENGTH];
   }
   return unmaskedData;
+}
+
+
+function sendSocketData(socket, data) {
+  const sendData = prepareMessageToSend(data);
+  socket.write(sendData);
+  console.log(`sent message: ${data}`);
+
+}
+
+
+function prepareMessageToSend(data) {
+  const encoded = Buffer.from(data);
+  const dataSize = data.length;
+
+
+  let dataFrameBuffer;
+  let offset = 2;
+
+  // 0x80 = 128 == 1 byte
+  // first byte needs to contain the FIN and the opcode
+  const firstByte = 0x80 | 0x01; // FIN = 1, opcode = 1 (text)
+  if (dataSize <= MAX_7_BITS_INT_MARKER) {
+    const bytes = [firstByte];
+    dataFrameBuffer = Buffer.from(bytes.concat(dataSize));
+  }else{
+    throw new Error("message length not supported");
+  }
+
+  const length = dataFrameBuffer.byteLength + dataSize;
+  const dataFrame = concat([dataFrameBuffer, encoded], length);
+  return dataFrame;
+}
+
+
+function concat(bufferList, totalLength) {
+  const target = Buffer.alloc(totalLength);
+  let offset = 0;
+
+  for (const buffer of bufferList) {
+    target.set(buffer, offset);
+    offset += buffer.length;
+  }
+
+  return target;
 }
