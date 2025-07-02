@@ -3,12 +3,17 @@ import crypto from "crypto";
 
 const PORT = 8080;
 
-// Websocket constants
+// -- websocket constants --
 const WEBSOCKET_MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 const MASK_KEY_LENGTH = 4;
 const OPCODE_TEXT = 0x1;
 const FIN_BIT = 0x80;
+const MAX_PAYLOAD_LENGTH_7BIT = 125;
+const PAYLOAD_LENGTH_16BIT = 126;
+const MAX_PAYLOAD_LENGTH_16BIT = 65535;
+const PAYLOAD_LENGTH_64BIT = 127;
 
+// -- server --
 const server = createServer((req, res) => {
   res.writeHead(200);
   res.end("Test Server");
@@ -18,14 +23,16 @@ const server = createServer((req, res) => {
 
 server.on("upgrade", onSocketUpgrade);
 
+// error handling
 ["uncaughtException", "unhandledRejection"].forEach((eventType) => {
   process.on(eventType, (err) => {
     console.error(`Error caught: ${err.stack || err}`);
   });
 });
 
-// handshake
-function onSocketUpgrade(req, socket, head) {
+
+// -- functions --
+function onSocketUpgrade(req, socket, _head) {
   const clientKey = req.headers["sec-websocket-key"];
   if (!clientKey) {
     socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
@@ -33,6 +40,7 @@ function onSocketUpgrade(req, socket, head) {
     return;
   }
 
+  // respond to handshake
   const acceptKey = createAcceptKey(clientKey);
   const responseHeaders = [
     "HTTP/1.1 101 Switching Protocols",
@@ -41,7 +49,6 @@ function onSocketUpgrade(req, socket, head) {
     `Sec-WebSocket-Accept: ${acceptKey}`,
     "\r\n",
   ].join("\r\n");
-
   socket.write(responseHeaders);
 
   // buffer incoming data here
@@ -68,7 +75,7 @@ function createAcceptKey(key) {
     .digest("base64");
 }
 
-// dataframe processing
+// process dataFrame Buffer
 function processBuffer(socket) {
   let buffer = socket._buffer;
 
@@ -85,11 +92,11 @@ function processBuffer(socket) {
 
     let offset = 2;
 
-    if (payloadLength === 126) {
+    if (payloadLength === PAYLOAD_LENGTH_16BIT) {
       if (buffer.length < offset + 2) return;
       payloadLength = buffer.readUInt16BE(offset);
       offset += 2;
-    } else if (payloadLength === 127) {
+    } else if (payloadLength === PAYLOAD_LENGTH_64BIT) {
       socket.destroy();
       console.error("64-bit length not supported right now");
       return;
@@ -130,65 +137,72 @@ function unmask(buffer, mask) {
   return result;
 }
 
-function handleFrame(socket, opcode, data, fin) {
-  if (opcode === 0x8) {
-    console.log("Client sent close frame");
-    socket.end();
-    return;
-  }
+function handleFrame(socket, opcode, data) {
+  const OPCODE_CLOSE = 0x8;
+  const OPCODE_PING = 0x9;
+  const OPCODE_PONG = 0xa;
 
-  if (opcode === 0x9) {
-    // ping frame, respond with pong
-    sendFrame(socket, 0xa, data);
-    return;
-  }
+  switch (opcode) {
+    case OPCODE_CLOSE: // Close frame
+      console.log("Client sent close frame");
+      socket.end();
+      break;
 
-  if (opcode === 0xa) {
-    // pong frame, do nothing
-    return;
-  }
+    case OPCODE_PING: // Ping frame
+      // Respond with Pong
+      sendFrame(socket, 0xa, data);
+      break;
 
-  if (opcode === OPCODE_TEXT) {
-    const message = data.toString("utf8").trim();
-    if (message.startsWith("{") && message.endsWith("}")) {
-      try {
-        const jsonData = JSON.parse(message);
-        console.log("Received JSON:", jsonData);
-        const response = JSON.stringify({ message: jsonData });
+    case OPCODE_PONG: // Pong frame
+      break;
+
+    case OPCODE_TEXT: {
+      const message = data.toString("utf8").trim();
+
+      if (message.startsWith("{") && message.endsWith("}")) {
+        try {
+          const jsonData = JSON.parse(message);
+          console.log("Received JSON:", jsonData);
+
+          const response = JSON.stringify({ message: jsonData });
+          sendFrame(socket, OPCODE_TEXT, Buffer.from(response));
+        } catch {
+          console.error("Invalid JSON:", message);
+          const errResp = JSON.stringify({
+            error: "Invalid JSON format",
+            originalMessage: message,
+          });
+          sendFrame(socket, OPCODE_TEXT, Buffer.from(errResp));
+        }
+      } else {
+        console.log("Received text message:", message);
+        const response = JSON.stringify({ type: "text", message });
         sendFrame(socket, OPCODE_TEXT, Buffer.from(response));
-      } catch {
-        console.error("Invalid JSON:", message);
-        const errResp = JSON.stringify({
-          error: "Invalid JSON format",
-          originalMessage: message,
-        });
-        sendFrame(socket, OPCODE_TEXT, Buffer.from(errResp));
       }
-    } else {
-      console.log("Received text message:", message);
-      const response = JSON.stringify({ type: "text", message });
-      sendFrame(socket, OPCODE_TEXT, Buffer.from(response));
+      break;
     }
-  } else {
-    console.warn(`Unsupported opcode: ${opcode}`);
+
+    default:
+      console.warn(`Unsupported opcode: ${opcode}`);
+      break;
   }
 }
 
-// sending frames
+// send dataframes
 function sendFrame(socket, opcode, payload) {
   const payloadLength = payload.length;
   let header;
 
   const finAndOpcode = FIN_BIT | opcode;
 
-  if (payloadLength <= 125) {
+  if (payloadLength <= MAX_PAYLOAD_LENGTH_7BIT) {
     header = Buffer.alloc(2);
     header[0] = finAndOpcode;
     header[1] = payloadLength;
-  } else if (payloadLength <= 65535) {
+  } else if (payloadLength <= MAX_PAYLOAD_LENGTH_16BIT) {
     header = Buffer.alloc(4);
     header[0] = finAndOpcode;
-    header[1] = 126;
+    header[1] = PAYLOAD_LENGTH_16BIT;
     header.writeUInt16BE(payloadLength, 2);
   } else {
     // may add larger message support later
