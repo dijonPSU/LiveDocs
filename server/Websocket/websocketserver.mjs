@@ -186,6 +186,7 @@ function handleFrame(socket, opcode, data) {
             leaveRoom(socket, roomName);
             break;
           case "send":
+            // for now
             sendToRoom(socket, roomName, JSON.stringify({
               from: "room",
               roomName,
