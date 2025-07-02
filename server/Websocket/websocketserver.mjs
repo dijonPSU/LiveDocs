@@ -1,11 +1,13 @@
 import { createServer } from "http";
 import crypto from "crypto";
+import { send } from "process";
 
 const PORT = 8080;
 
 
 
 const rooms = new Map();
+
 
 // -- websocket constants --
 const WEBSOCKET_MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -36,13 +38,16 @@ server.on("upgrade", onSocketUpgrade);
 
 
 // -- functions --
-function onSocketUpgrade(req, socket, _head) {
+function onSocketUpgrade(req, socket) {
   const clientKey = req.headers["sec-websocket-key"];
   if (!clientKey) {
     socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
     socket.destroy();
     return;
   }
+
+  // assign random ID for now (testing)
+  socket.id = crypto.randomUUID();
 
   // respond to handshake
   const acceptKey = createAcceptKey(clientKey);
@@ -69,6 +74,12 @@ function onSocketUpgrade(req, socket, _head) {
 
   socket.on("end", () => {
     console.log("Client disconnected");
+
+    if(socket.rooms) {
+      socket.rooms.forEach((roomName) => {
+        leaveRoom(socket, roomName);
+      });
+    }
   });
 }
 
@@ -163,25 +174,39 @@ function handleFrame(socket, opcode, data) {
     case OPCODE_TEXT: {
       const message = data.toString("utf8").trim();
 
-      if (message.startsWith("{") && message.endsWith("}")) {
-        try {
-          const jsonData = JSON.parse(message);
-          console.log("Received JSON:", jsonData);
+      try {
+        const jsonData = JSON.parse(message);
+        const { action, roomName, message: msg } = jsonData;
 
-          const response = JSON.stringify({ message: jsonData });
-          sendFrame(socket, OPCODE_TEXT, Buffer.from(response));
-        } catch {
-          console.error("Invalid JSON:", message);
-          const errResp = JSON.stringify({
-            error: "Invalid JSON format",
-            originalMessage: message,
-          });
-          sendFrame(socket, OPCODE_TEXT, Buffer.from(errResp));
+        switch (action) {
+          case "join":
+            joinRoom(socket, roomName);
+            break;
+          case "leave":
+            leaveRoom(socket, roomName);
+            break;
+          case "send":
+            sendToRoom(socket, roomName, JSON.stringify({
+              from: "room",
+              roomName,
+              message: msg,
+            }));
+            break;
+          default:
+            console.error("Invalid action:", action);
+            return;
         }
-      } else {
-        console.log("Received text message:", message);
-        const response = JSON.stringify({ type: "text", message });
-        sendFrame(socket, OPCODE_TEXT, Buffer.from(response));
+
+        //const response = JSON.stringify({ echo: jsonData });
+        //sendFrame(socket, OPCODE_TEXT, Buffer.from(response));
+      } catch (err) {
+        console.error("JSON processing error:", err);
+        console.error("Invalid JSON content:", message);
+        const errResp = JSON.stringify({
+          error: "Invalid JSON format",
+          originalMessage: message,
+        });
+        sendFrame(socket, OPCODE_TEXT, Buffer.from(errResp));
       }
       break;
     }
@@ -233,6 +258,7 @@ function joinRoom(client, roomName) {
     // give client a rooms property if it doesn't have one so we can use it to keep track of rooms
     client.rooms = new Set();
   }
+  client.rooms.add(roomName);
   console.log(`Socket ${client.id} joined room ${roomName}`);
 }
 
@@ -250,13 +276,21 @@ function leaveRoom(client, roomName) {
   }
 }
 
-function sendToRoom(client, roomName, message) {
+function sendToRoom(roomClient, roomName, message) {
   if (rooms.has(roomName)) {
+    console.log(`Sending message to room ${roomName}: ${message}`);
+    sendFrame(roomClient, OPCODE_TEXT, Buffer.from(message));
     const roomToBroadcast = rooms.get(roomName);
     roomToBroadcast.forEach((client) => {
-      if (client !== client) {
+      // send to everyone except the sender
+      if (roomClient !== client) {
         sendFrame(client, OPCODE_TEXT, Buffer.from(message));
       }
     });
+
+  }
+  else{
+    console.error(`Room ${roomName} does not exist`);
+    sendFrame(roomClient, OPCODE_TEXT, Buffer.from(`Room ${roomName} does not exist`));
   }
 }

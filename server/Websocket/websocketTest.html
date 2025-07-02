@@ -1,298 +1,102 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Websocket Test Client</title>
-    <!-- Include Quill stylesheet -->
-    <link
-      href="https://cdn.quilljs.com/1.3.6/quill.snow.css"
-      rel="stylesheet"
-    />
-    <!-- Include Quill library -->
-    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-      }
-      #editor-container {
-        height: 300px;
-        margin-bottom: 20px;
-        border: 1px solid #ccc;
-      }
-      .controls {
-        margin-bottom: 20px;
-      }
-      button {
-        padding: 8px 16px;
-        background-color: #4caf50;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        margin-right: 10px;
-      }
-      button:hover {
-        background-color: #45a049;
-      }
-      .message-container {
-        display: flex;
-        margin-top: 20px;
-      }
-      .message-box {
-        flex: 1;
-        border: 1px solid #ddd;
-        padding: 10px;
-        margin-right: 10px;
-        border-radius: 4px;
-        background-color: #f9f9f9;
-      }
-      .message-box h3 {
-        margin-top: 0;
-        border-bottom: 1px solid #ddd;
-        padding-bottom: 5px;
-      }
-      #messages {
-        max-height: 300px;
-        overflow-y: auto;
-      }
-      #sent-data,
-      #received-data {
-        max-height: 300px;
-        overflow-y: auto;
-        font-family: monospace;
-        white-space: pre-wrap;
-      }
-      .json-key {
-        color: #881391;
-      }
-      .json-string {
-        color: #1a1aa6;
-      }
-      .json-number {
-        color: #1a1aa6;
-      }
-      .json-boolean {
-        color: #1a1aa6;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>QuillJS WebSocket Test</h1>
+<head>
+  <meta charset="UTF-8" />
+  <title>WebSocket Test Client</title>
+  <style>
+    body { font-family: sans-serif; padding: 1em; }
+    textarea, input { width: 100%; margin: 0.5em 0; }
+    #log { height: 200px; overflow-y: auto; background: #f9f9f9; padding: 0.5em; border: 1px solid #ccc; }
+    .action-buttons { margin-top: 1em; }
+    button { margin-right: 0.5em; }
+  </style>
+</head>
+<body>
+  <h2>WebSocket Client Tester</h2>
 
-    <!-- Create the editor container -->
-    <div id="editor-container"></div>
+  <label>Room Name:</label>
+  <input type="text" id="room" value="lobby" />
 
-    <div class="controls">
-      <button id="send-btn">Send Editor Content</button>
-      <button id="clear-btn">Clear Messages</button>
-    </div>
+  <label>Message (only used for "send" action):</label>
+  <input type="text" id="message" />
 
-    <div class="controls">
-      <input
-        type="text"
-        id="text-input"
-        placeholder="Enter plain text message..."
-        style="padding: 8px; width: 300px; margin-right: 10px"
-      />
-      <button id="send-text-btn">Send Plain Text</button>
-    </div>
+  <div class="action-buttons">
+    <button onclick="sendJoin()">Join Room</button>
+    <button onclick="sendLeave()">Leave Room</button>
+    <button onclick="sendMessage()">Send Message</button>
+    <button onclick="disconnect()">Disconnect</button>
+  </div>
 
-    <div class="message-container">
-      <div class="message-box">
-        <h3>WebSocket Messages</h3>
-        <output id="messages"></output>
-      </div>
+  <h3>Server Log:</h3>
+  <div id="log"></div>
 
-      <div class="message-box">
-        <h3>Sent Data (JSON)</h3>
-        <pre id="sent-data"></pre>
-      </div>
+  <script>
+    const log = document.getElementById("log");
+    let ws;
 
-      <div class="message-box">
-        <h3>Received Data (JSON)</h3>
-        <pre id="received-data"></pre>
-      </div>
-    </div>
+    function logMessage(msg, type = "log") {
+      const div = document.createElement("div");
+      div.textContent = `[${type}] ${msg}`;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
 
-    <script>
-      // Initialize Quill editor
-      const quill = new Quill("#editor-container", {
-        theme: "snow",
-        placeholder: "Compose an epic...",
-        modules: {
-          toolbar: [
-            ["bold", "italic", "underline", "strike"],
-            ["blockquote", "code-block"],
-            [{ header: 1 }, { header: 2 }],
-            [{ list: "ordered" }, { list: "bullet" }],
-            [{ script: "sub" }, { script: "super" }],
-            [{ indent: "-1" }, { indent: "+1" }],
-            [{ color: [] }, { background: [] }],
-            [{ align: [] }],
-            ["clean"],
-          ],
-        },
-      });
-
-      // Set up WebSocket connection
-      const messages = document.getElementById("messages");
-      const sentData = document.getElementById("sent-data");
-      const receivedData = document.getElementById("received-data");
-      const sendBtn = document.getElementById("send-btn");
-      const clearBtn = document.getElementById("clear-btn");
-      const textInput = document.getElementById("text-input");
-      const sendTextBtn = document.getElementById("send-text-btn");
-      const ws = new WebSocket("ws://localhost:8080");
-
-      // Function to format JSON with syntax highlighting
-      function formatJSON(json) {
-        if (typeof json !== "string") {
-          json = JSON.stringify(json, null, 2);
-        }
-
-        return json.replace(
-          /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
-          function (match) {
-            let cls = "json-number";
-            if (/^"/.test(match)) {
-              if (/:$/.test(match)) {
-                cls = "json-key";
-              } else {
-                cls = "json-string";
-              }
-            } else if (/true|false/.test(match)) {
-              cls = "json-boolean";
-            } else if (/null/.test(match)) {
-              cls = "json-null";
-            }
-            return '<span class="' + cls + '">' + match + "</span>";
-          },
-        );
+    function connect() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        return;
       }
 
-      // WebSocket event handlers
+      ws = new WebSocket("ws://localhost:8080");
+
       ws.onopen = () => {
-        console.log("Connection established");
-        messages.innerHTML += "<p>WebSocket connection established</p>";
-
-        // Send initial connection message
-        const id = Math.floor(Math.random() * 1000000);
-        const initialData = {
-          type: "connection",
-          clientId: id,
-          message: "QuillJS client connected",
-        };
-
-        const initialDataStr = JSON.stringify(initialData);
-        ws.send(initialDataStr);
-
-        // Display sent data
-        sentData.innerHTML = formatJSON(initialData);
-        messages.innerHTML += "<p>Sent connection message</p>";
+        logMessage("Connected to WebSocket server", "info");
       };
 
-      ws.onmessage = ({ data }) => {
-        console.log("Received message:", data);
-        messages.innerHTML += "<p>Received message</p>";
-
-        try {
-          // Try to parse the data as JSON
-          const jsonData = JSON.parse(data);
-
-          // Display received data with formatting
-          receivedData.innerHTML = formatJSON(jsonData);
-
-          // If it contains editor content, update the editor
-          if (jsonData.type === "content-update" && jsonData.delta) {
-            quill.updateContents(jsonData.delta);
-            messages.innerHTML += "<p>Updated editor with received content</p>";
-          }
-        } catch (e) {
-          // If not JSON, just display as is
-          console.log("Not JSON data or other error:", e);
-          receivedData.textContent = data;
-        }
+      ws.onmessage = (event) => {
+        logMessage(event.data, "server");
       };
 
-      ws.onerror = (error) => {
-        console.error("Error:", error);
-        messages.innerHTML += "<p>Error: " + error + "</p>";
+      ws.onerror = (err) => {
+        logMessage("WebSocket error", "error");
+        console.error(err);
       };
 
       ws.onclose = () => {
-        console.log("Connection closed");
-        messages.innerHTML += "<p>WebSocket connection closed</p>";
+        logMessage("WebSocket closed", "info");
       };
+    }
 
-      // Track changes in the editor
-      quill.on("text-change", function (delta, oldDelta, source) {
-        if (source === "user") {
-          console.log("Editor change detected:", delta);
-          messages.innerHTML += "<p>Editor changed locally</p>";
-        }
-      });
+    function sendJoin() {
+      connect();
+      const room = document.getElementById("room").value;
+      const payload = { action: "join", roomName: room };
+      ws.send(JSON.stringify(payload));
+      logMessage(`Sent join request to room "${room}"`, "client");
+    }
 
-      // Send button handler
-      sendBtn.addEventListener("click", () => {
-        if (ws.readyState === WebSocket.OPEN) {
-          const content = quill.getContents();
-          const message = {
-            type: "content-update",
-            delta: content.ops,
-            timestamp: new Date().toISOString(),
-          };
+    function sendLeave() {
+      connect();
+      const room = document.getElementById("room").value;
+      const payload = { action: "leave", roomName: room };
+      ws.send(JSON.stringify(payload));
+      logMessage(`Sent leave request from room "${room}"`, "client");
+    }
 
-          const messageStr = JSON.stringify(message);
-          ws.send(messageStr);
+    function sendMessage() {
+      connect();
+      const room = document.getElementById("room").value;
+      const msg = document.getElementById("message").value;
+      const payload = { action: "send", roomName: room, message: msg };
+      ws.send(JSON.stringify(payload));
+      logMessage(`Sent message to room "${room}": ${msg}`, "client");
+    }
 
-          // Display sent data with formatting
-          sentData.innerHTML = formatJSON(message);
-          messages.innerHTML += "<p>Sent editor content to server</p>";
-        } else {
-          messages.innerHTML += "<p>WebSocket is not connected</p>";
-        }
-      });
-
-      // Clear button handler
-      clearBtn.addEventListener("click", () => {
-        messages.innerHTML = "";
-        sentData.innerHTML = "";
-        receivedData.innerHTML = "";
-      });
-
-      // Send plain text button handler
-      sendTextBtn.addEventListener("click", () => {
-        if (ws.readyState === WebSocket.OPEN) {
-          const text = textInput.value;
-          if (text.trim() === "") {
-            messages.innerHTML += "<p>Please enter a message to send</p>";
-            return;
-          }
-
-          // Send the plain text message
-          ws.send(text);
-
-          // Display sent data
-          sentData.innerHTML = `<span class="json-string">"${text}"</span> (Plain Text)`;
-          messages.innerHTML += "<p>Sent plain text message</p>";
-
-          // Clear the input field
-          textInput.value = "";
-        } else {
-          messages.innerHTML += "<p>WebSocket is not connected</p>";
-        }
-      });
-
-      // Allow pressing Enter in the text input to send the message
-      textInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-          sendTextBtn.click();
-        }
-      });
-    </script>
-  </body>
+    function disconnect() {
+      if (ws) {
+        ws.close();
+        logMessage("Disconnected from server", "info");
+      }
+    }
+  </script>
+</body>
 </html>
