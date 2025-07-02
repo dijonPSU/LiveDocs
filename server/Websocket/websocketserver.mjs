@@ -3,6 +3,10 @@ import crypto from "crypto";
 
 const PORT = 8080;
 
+
+
+const rooms = new Map();
+
 // -- websocket constants --
 const WEBSOCKET_MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 const MASK_KEY_LENGTH = 4;
@@ -213,4 +217,46 @@ function sendFrame(socket, opcode, payload) {
   const frame = Buffer.concat([header, payload]);
   socket.write(frame);
   console.log("Sent message:", payload.toString());
+}
+
+
+function joinRoom(client, roomName) {
+  // create room if it doesn't exist
+  if (!rooms.has(roomName)) {
+    rooms.set(roomName, new Set());
+  }
+
+  // add client to room set
+  rooms.get(roomName).add(client);
+
+  if (!client.rooms) {
+    // give client a rooms property if it doesn't have one so we can use it to keep track of rooms
+    client.rooms = new Set();
+  }
+  console.log(`Socket ${client.id} joined room ${roomName}`);
+}
+
+
+function leaveRoom(client, roomName) {
+  if (rooms.has(roomName)) {
+    rooms.get(roomName).delete(client);
+    if(rooms.get(roomName).size === 0) {
+      rooms.delete(roomName);
+    }
+  }
+
+  if (client.rooms){
+    client.rooms.delete(roomName);
+  }
+}
+
+function sendToRoom(client, roomName, message) {
+  if (rooms.has(roomName)) {
+    const roomToBroadcast = rooms.get(roomName);
+    roomToBroadcast.forEach((client) => {
+      if (client !== client) {
+        sendFrame(client, OPCODE_TEXT, Buffer.from(message));
+      }
+    });
+  }
 }
