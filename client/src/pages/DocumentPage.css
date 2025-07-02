@@ -1,160 +1,160 @@
 /* Document Page Styles */
 .document-page {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f8f9fa;
 }
 
 /* Document Header */
 .document-header {
-    display: flex;
-    align-items: center;
-    padding: 8px 16px;
-    background-color: #ffffff;
-    border-bottom: 1px solid #e0e0e0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    z-index: 10;
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  z-index: 10;
 }
 
 .document-logo {
-    width: 40px;
-    height: 40px;
-    margin-right: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #4285f4;
-    font-weight: 500;
-    font-size: 16px;
+  width: 40px;
+  height: 40px;
+  margin-right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4285f4;
+  font-weight: 500;
+  font-size: 16px;
 }
 
 .document-title-container {
-    flex: 1;
-    max-width: 300px;
-    margin-right: 24px;
+  flex: 1;
+  max-width: 300px;
+  margin-right: 24px;
 }
 
 .document-title-input {
-    border: none;
-    font-size: 18px;
-    padding: 8px 12px;
-    width: 100%;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+  border: none;
+  font-size: 18px;
+  padding: 8px 12px;
+  width: 100%;
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
 
 .document-title-input:hover {
-    background-color: #f1f3f4;
+  background-color: #f1f3f4;
 }
 
 .document-title-input:focus {
-    background-color: #f1f3f4;
-    outline: none;
+  background-color: #f1f3f4;
+  outline: none;
 }
 
 .document-actions {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-    gap: 16px;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 16px;
 }
 
 .document-button {
-    background-color: #f1f3f4;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
-    font-size: 14px;
-    color: #3c4043;
-    cursor: pointer;
-    transition: background-color 0.2s;
+  background-color: #f1f3f4;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #3c4043;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .document-button:hover {
-    background-color: #e8eaed;
+  background-color: #e8eaed;
 }
 
 .share-button {
-    background-color: #1a73e8;
-    color: white;
+  background-color: #1a73e8;
+  color: white;
 }
 
 .share-button:hover {
-    background-color: #1765cc;
+  background-color: #1765cc;
 }
 
 .user-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: #dadce0;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 500;
-    color: #3c4043;
-    cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #dadce0;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #3c4043;
+  cursor: pointer;
 }
 
 /* Document Content */
 .document-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 40px 0;
-    overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0;
+  overflow-y: auto;
 }
 
 .editor-container {
-    width: 100%;
-    max-width: 850px;
-    background-color: white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    min-height: 1100px; /* Roughly A4 size */
-    border-radius: 4px;
-    margin-bottom: 40px;
+  width: 100%;
+  max-width: 850px;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  min-height: 1100px; /* Roughly A4 size */
+  border-radius: 4px;
+  margin-bottom: 40px;
 }
 
 /* Quill Editor Customization */
 .ql-toolbar.ql-snow {
-    border-top: none;
-    border-left: none;
-    border-right: none;
-    border-bottom: 1px solid #e0e0e0;
-    padding: 8px 16px;
-    background-color: #f8f9fa;
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 8px 16px;
+  background-color: #f8f9fa;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
 }
 
 .ql-container.ql-snow {
-    border: none;
-    font-family: 'Arial', sans-serif;
-    font-size: 12pt;
-    line-height: 1.5;
-    padding: 40px 60px;
+  border: none;
+  font-family: "Arial", sans-serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  padding: 40px 60px;
 }
 
 .ql-editor {
-    padding: 0;
-    min-height: 1020px; /* A4 minus padding */
+  padding: 0;
+  min-height: 1020px; /* A4 minus padding */
 }
 
 .ql-editor p {
-    margin-bottom: 0.5em;
+  margin-bottom: 0.5em;
 }
 
 /* Responsive adjustments */
 @media (max-width: 900px) {
-    .editor-container {
-        margin: 0 16px 40px;
-    }
+  .editor-container {
+    margin: 0 16px 40px;
+  }
 
-    .ql-container.ql-snow {
-        padding: 20px 30px;
-    }
+  .ql-container.ql-snow {
+    padding: 20px 30px;
+  }
 }

@@ -1,15 +1,10 @@
-import LoginPage from './pages/loginPage';
-import CallbackPage from './pages/CallbackPage';
-import Homepage from './pages/Homepage';
-import DocumentPage from './pages/DocumentPage';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route
-} from 'react-router-dom'
+import LoginPage from "./pages/loginPage";
+import CallbackPage from "./pages/CallbackPage";
+import Homepage from "./pages/Homepage";
+import DocumentPage from "./pages/DocumentPage";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-
-import './App.css';
+import "./App.css";
 
 function App() {
   return (
@@ -24,4 +19,4 @@ function App() {
   );
 }
 
-export default App
+export default App;
