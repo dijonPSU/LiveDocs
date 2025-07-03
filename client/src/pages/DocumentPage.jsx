@@ -138,21 +138,8 @@ export default function DocumentPage() {
 }
 
 
-function testWebsocket() {
-  const newConnection = connectTestToWebsocket();
-
-  newConnection.onopen = () => {
-    console.log("Connected to test websocket");
-  };
-
-  newConnection.onerror = (error) => {
-    console.error("WebSocket error:", error);
-  };
-}
 
 function sendUpdate(webSocket, delta) {
-  testWebsocket();
-
-  webSocket.send(JSON.stringify(delta));
+  webSocket.send(JSON.stringify({ action: "send", message: delta }));
   console.log("Sent update to server:", delta);
 }

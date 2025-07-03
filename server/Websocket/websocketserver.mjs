@@ -184,15 +184,21 @@ function handleFrame(socket, opcode, data) {
             break;
           case "send":
             // for now
-            sendToRoom(
-              socket,
-              roomName,
-              JSON.stringify({
-                from: "room",
+            if (roomName) {
+              sendToRoom(
+                socket,
                 roomName,
-                message: msg,
-              }),
-            );
+                JSON.stringify({
+                  from: "room",
+                  roomName,
+                  message: msg,
+                }),
+              );
+
+            } else {
+              console.log("No rooms found, sending to all clients")
+              sendFrame(socket, OPCODE_TEXT, Buffer.from(message));
+            }
             break;
           default:
             console.error("Invalid action:", action);
