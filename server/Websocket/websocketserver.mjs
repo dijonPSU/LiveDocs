@@ -1,6 +1,5 @@
 import { createServer } from "http";
 import crypto from "crypto";
-import { send } from "process";
 
 const PORT = 8080;
 
@@ -55,6 +54,7 @@ function onSocketUpgrade(req, socket) {
     "\r\n",
   ].join("\r\n");
   socket.write(responseHeaders);
+  console.log(`Client connected: ${socket.id}`);
 
   // buffer incoming data here
   socket._buffer = Buffer.alloc(0);
@@ -89,6 +89,7 @@ function createAcceptKey(key) {
 // process dataFrame Buffer
 function processBuffer(socket) {
   let buffer = socket._buffer;
+  console.log("Incoming data")
 
   while (true) {
     if (buffer.length < 2) return; // need at least 2 bytes to read header
