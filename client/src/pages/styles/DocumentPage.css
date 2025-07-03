@@ -24,7 +24,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #4285f4;
+  color: 646cff;
   font-weight: 500;
   font-size: 16px;
 }
@@ -76,12 +76,12 @@
 }
 
 .share-button {
-  background-color: #1a73e8;
+  background-color: #646cff;
   color: white;
 }
 
 .share-button:hover {
-  background-color: #1765cc;
+  background-color: rgb(26, 111, 223);
 }
 
 .user-avatar {

@@ -1,4 +1,4 @@
-import LoginPage from "./pages/loginPage";
+import LoginPage from "./pages/LoginPage";
 import CallbackPage from "./pages/CallbackPage";
 import Homepage from "./pages/Homepage";
 import DocumentPage from "./pages/DocumentPage";

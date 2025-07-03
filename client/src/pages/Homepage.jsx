@@ -1,7 +1,7 @@
 import React from "react";
 import Header from "../components/HomePage/HomepageHeader.jsx";
 import HomepageBody from "../components/HomePage/HomepageBody.jsx";
-import "./Homepage.css";
+import "../pages/styles/Homepage.css";
 
 const Homepage = () => {
   return (
