@@ -33,7 +33,7 @@ export default function DocumentPage() {
     useEffect(() => {
       if (!webSocket) return;
 
-      const roomName = documentTitle;
+      const roomName = "test";
 
       webSocket.send(JSON.stringify({ action: "join", roomName: "test"}));
       console.log("Joined room:", roomName);
@@ -75,7 +75,6 @@ export default function DocumentPage() {
 
 
       // send changes to server
-      //send("send-changes", delta);
       sendUpdate(webSocket, delta);
 
 
