@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import Quill from "quill";
 import { useLocation } from "react-router-dom";
-import { connectToWebSocket } from "../utils/dataFetcher";
 import { useNavigate } from "react-router";
+import { connectTestToWebsocket } from "../utils/dataFetcher";
 import "quill/dist/quill.snow.css";
-import "./DocumentPage.css";
+import "../pages/styles/DocumentPage.css";
 
 export default function DocumentPage() {
   // get document name from navigation state
@@ -12,21 +12,37 @@ export default function DocumentPage() {
   const { state } = location;
   const { documentName } = state || "Untitled Document";
 
+
   const navigate = useNavigate();
-  const [socket, setSocket] = useState(null); // so we can access socket from anywhere
+  const [webSocket, setWebSocket] = useState(null); // so we can access socket from anywhere
   const [documentTitle, setDocumentTitle] = useState(documentName);
   const editorRef = useRef(null);
   const quillRef = useRef(null);
 
-  // connect to server
-  useEffect(() => {
-    const socketio = connectToWebSocket();
-    setSocket(socketio);
+    // connect to server (will only connect when user share document -> have to implement)
+    useEffect(() => {
+      const websocketConnect = connectTestToWebsocket();
+      setWebSocket(websocketConnect);
 
-    return () => {
-      socketio.disconnect();
-    };
-  }, []);
+      return () => {
+        websocketConnect.close();
+      };
+    }, [])
+
+
+    useEffect(() => {
+      if (!webSocket) return;
+
+      const roomName = "test";
+
+      webSocket.send(JSON.stringify({ action: "join", roomName: "test"}));
+      console.log("Joined room:", roomName);
+
+      return () => {
+        webSocket.send(JSON.stringify({ action: "leave", roomName}));
+      };
+    }, [webSocket, documentTitle]);
+
 
   //  quill editor { For now until we have a custom text editor }
   useEffect(() => {
@@ -52,33 +68,48 @@ export default function DocumentPage() {
 
   // use effect for sending changes to server
   useEffect(() => {
-    if (socket == null || quillRef.current == null) return;
+    if (webSocket == null || quillRef.current == null) return;
 
     const handleTextChange = (delta, oldDelta, source) => {
       if (source !== "user") return; // so we can only send changes from user
-      console.log("Sending changes to server:", delta);
-      socket.emit("send-changes", delta);
+
+
+      // send changes to server
+      sendUpdate(webSocket, delta);
+
+
     };
     quillRef.current.on("text-change", handleTextChange);
 
     return () => {
       quillRef.current.off("text-change", handleTextChange);
     };
-  }, [socket]);
+  }, [webSocket]);
+
 
   // use effect for receiving changes from server
   useEffect(() => {
-    if (socket == null || quillRef.current == null) return;
+    if (!webSocket || !quillRef.current) return;
 
     const handleServerChanges = (delta) => {
+      console.warn("Updated: ", delta);
       quillRef.current.updateContents(delta);
     };
-    socket.on("receive-changes", handleServerChanges);
+
+    const onMessage = (event) => {
+      console.log("Received changes from server:", event.data);
+      const data = JSON.parse(event.data);
+      const delta = data.message;
+      handleServerChanges(delta);
+    };
+
+    webSocket.onmessage = onMessage;
 
     return () => {
-      socket.off("receive-changes", handleServerChanges);
+      webSocket.onmessage = null;
     };
-  }, [socket]);
+  }, [webSocket]);
+
 
   // Handle document title change
   const handleTitleChange = (e) => {
@@ -122,4 +153,11 @@ export default function DocumentPage() {
       </div>
     </div>
   );
+}
+
+
+
+function sendUpdate(webSocket, delta) {
+  webSocket.send(JSON.stringify({ action: "send", message: delta, roomName: "test"}));
+  console.log("Sent update to server:", delta);
 }

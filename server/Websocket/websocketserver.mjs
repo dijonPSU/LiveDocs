@@ -1,6 +1,5 @@
 import { createServer } from "http";
 import crypto from "crypto";
-import { send } from "process";
 
 const PORT = 8080;
 
@@ -55,6 +54,7 @@ function onSocketUpgrade(req, socket) {
     "\r\n",
   ].join("\r\n");
   socket.write(responseHeaders);
+  console.log(`Client connected: ${socket.id}`);
 
   // buffer incoming data here
   socket._buffer = Buffer.alloc(0);
@@ -89,6 +89,7 @@ function createAcceptKey(key) {
 // process dataFrame Buffer
 function processBuffer(socket) {
   let buffer = socket._buffer;
+  console.log("Incoming data");
 
   while (true) {
     if (buffer.length < 2) return; // need at least 2 bytes to read header
@@ -183,15 +184,20 @@ function handleFrame(socket, opcode, data) {
             break;
           case "send":
             // for now
-            sendToRoom(
-              socket,
-              roomName,
-              JSON.stringify({
-                from: "room",
+            if (roomName) {
+              sendToRoom(
+                socket,
                 roomName,
-                message: msg,
-              }),
-            );
+                JSON.stringify({
+                  from: "room",
+                  roomName,
+                  message: msg,
+                }),
+              );
+            } else {
+              console.log("No rooms found, sending to all clients");
+              sendFrame(socket, OPCODE_TEXT, Buffer.from(message));
+            }
             break;
           default:
             console.error("Invalid action:", action);
@@ -277,7 +283,7 @@ function leaveRoom(client, roomName) {
 function sendToRoom(roomClient, roomName, message) {
   if (rooms.has(roomName)) {
     console.log(`Sending message to room ${roomName}: ${message}`);
-    sendFrame(roomClient, OPCODE_TEXT, Buffer.from(message));
+    //sendFrame(roomClient, OPCODE_TEXT, Buffer.from(message));
     const roomToBroadcast = rooms.get(roomName);
     roomToBroadcast.forEach((client) => {
       // send to everyone except the sender
