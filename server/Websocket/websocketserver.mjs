@@ -4,10 +4,7 @@ import { send } from "process";
 
 const PORT = 8080;
 
-
-
 const rooms = new Map();
-
 
 // -- websocket constants --
 const WEBSOCKET_MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -35,7 +32,6 @@ server.on("upgrade", onSocketUpgrade);
     console.error(`Error caught: ${err.stack || err}`);
   });
 });
-
 
 // -- functions --
 function onSocketUpgrade(req, socket) {
@@ -75,7 +71,7 @@ function onSocketUpgrade(req, socket) {
   socket.on("end", () => {
     console.log("Client disconnected");
 
-    if(socket.rooms) {
+    if (socket.rooms) {
       socket.rooms.forEach((roomName) => {
         leaveRoom(socket, roomName);
       });
@@ -187,11 +183,15 @@ function handleFrame(socket, opcode, data) {
             break;
           case "send":
             // for now
-            sendToRoom(socket, roomName, JSON.stringify({
-              from: "room",
+            sendToRoom(
+              socket,
               roomName,
-              message: msg,
-            }));
+              JSON.stringify({
+                from: "room",
+                roomName,
+                message: msg,
+              }),
+            );
             break;
           default:
             console.error("Invalid action:", action);
@@ -211,7 +211,6 @@ function handleFrame(socket, opcode, data) {
       }
       break;
     }
-
     default:
       console.warn(`Unsupported opcode: ${opcode}`);
       break;
@@ -245,7 +244,6 @@ function sendFrame(socket, opcode, payload) {
   console.log("Sent message:", payload.toString());
 }
 
-
 function joinRoom(client, roomName) {
   // create room if it doesn't exist
   if (!rooms.has(roomName)) {
@@ -263,16 +261,15 @@ function joinRoom(client, roomName) {
   console.log(`Socket ${client.id} joined room ${roomName}`);
 }
 
-
 function leaveRoom(client, roomName) {
   if (rooms.has(roomName)) {
     rooms.get(roomName).delete(client);
-    if(rooms.get(roomName).size === 0) {
+    if (rooms.get(roomName).size === 0) {
       rooms.delete(roomName);
     }
   }
 
-  if (client.rooms){
+  if (client.rooms) {
     client.rooms.delete(roomName);
   }
 }
@@ -288,10 +285,12 @@ function sendToRoom(roomClient, roomName, message) {
         sendFrame(client, OPCODE_TEXT, Buffer.from(message));
       }
     });
-
-  }
-  else{
+  } else {
     console.error(`Room ${roomName} does not exist`);
-    sendFrame(roomClient, OPCODE_TEXT, Buffer.from(`Room ${roomName} does not exist`));
+    sendFrame(
+      roomClient,
+      OPCODE_TEXT,
+      Buffer.from(`Room ${roomName} does not exist`),
+    );
   }
 }
