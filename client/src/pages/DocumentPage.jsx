@@ -12,6 +12,7 @@ export default function DocumentPage() {
   const { state } = location;
   const { documentName } = state || "Untitled Document";
 
+
   const navigate = useNavigate();
   const [webSocket, setWebSocket] = useState(null); // so we can access socket from anywhere
   const [documentTitle, setDocumentTitle] = useState(documentName);
@@ -27,6 +28,20 @@ export default function DocumentPage() {
         websocketConnect.close();
       };
     }, [])
+
+
+    useEffect(() => {
+      if (!webSocket) return;
+
+      const roomName = documentTitle;
+
+      webSocket.send(JSON.stringify({ action: "join", roomName: "test"}));
+      console.log("Joined room:", roomName);
+
+      return () => {
+        webSocket.send(JSON.stringify({ action: "leave", roomName}));
+      };
+    }, [webSocket, documentTitle]);
 
 
   //  quill editor { For now until we have a custom text editor }
@@ -57,7 +72,7 @@ export default function DocumentPage() {
 
     const handleTextChange = (delta, oldDelta, source) => {
       if (source !== "user") return; // so we can only send changes from user
-      console.log("Sending changes to server:", delta);
+
 
       // send changes to server
       //send("send-changes", delta);
@@ -75,22 +90,26 @@ export default function DocumentPage() {
 
   // use effect for receiving changes from server
   useEffect(() => {
-    if (webSocket == null || quillRef.current == null) return;
+    if (!webSocket || !quillRef.current) return;
 
     const handleServerChanges = (delta) => {
+      console.warn("Updated: ", delta);
       quillRef.current.updateContents(delta);
     };
 
-    //socket.on("receive-changes", handleServerChanges);
+    const onMessage = (event) => {
+      console.log("Received changes from server:", event.data);
+      const data = JSON.parse(event.data);
+      const delta = data.message;
+      handleServerChanges(delta);
+    };
+
+    webSocket.onmessage = onMessage;
 
     return () => {
-      webSocket.onclose = () => {("receive-changes", handleServerChanges);}
+      webSocket.onmessage = null;
     };
   }, [webSocket]);
-
-
-
-
 
 
   // Handle document title change
@@ -140,6 +159,6 @@ export default function DocumentPage() {
 
 
 function sendUpdate(webSocket, delta) {
-  webSocket.send(JSON.stringify({ action: "send", message: delta }));
+  webSocket.send(JSON.stringify({ action: "send", message: delta, roomName: "test"}));
   console.log("Sent update to server:", delta);
 }

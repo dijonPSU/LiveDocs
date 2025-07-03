@@ -284,7 +284,7 @@ function leaveRoom(client, roomName) {
 function sendToRoom(roomClient, roomName, message) {
   if (rooms.has(roomName)) {
     console.log(`Sending message to room ${roomName}: ${message}`);
-    sendFrame(roomClient, OPCODE_TEXT, Buffer.from(message));
+    //sendFrame(roomClient, OPCODE_TEXT, Buffer.from(message));
     const roomToBroadcast = rooms.get(roomName);
     roomToBroadcast.forEach((client) => {
       // send to everyone except the sender
