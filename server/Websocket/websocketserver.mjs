@@ -89,7 +89,7 @@ function createAcceptKey(key) {
 // process dataFrame Buffer
 function processBuffer(socket) {
   let buffer = socket._buffer;
-  console.log("Incoming data")
+  console.log("Incoming data");
 
   while (true) {
     if (buffer.length < 2) return; // need at least 2 bytes to read header
@@ -194,9 +194,8 @@ function handleFrame(socket, opcode, data) {
                   message: msg,
                 }),
               );
-
             } else {
-              console.log("No rooms found, sending to all clients")
+              console.log("No rooms found, sending to all clients");
               sendFrame(socket, OPCODE_TEXT, Buffer.from(message));
             }
             break;
