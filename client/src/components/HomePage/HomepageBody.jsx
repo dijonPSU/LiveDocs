@@ -6,7 +6,8 @@ import DocumentOptionsModal from "./HomepageDocumentOptionsModal";
 
 const HomepageBody = () => {
   const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateDocumentModalOpen, setIsCreateDocumentModalOpen] =
+    useState(false);
   const [isDocumentOptionsModalOpen, setIsDocumentOptionsModalOpen] =
     useState(false);
   const [modalPosition, setModalPosition] = useState(null);
@@ -22,11 +23,11 @@ const HomepageBody = () => {
   ];
 
   const toggleModal = () => {
-    setIsModalOpen(!isModalOpen);
+    setIsCreateDocumentModalOpen(!isCreateDocumentModalOpen);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleCloseCreateDocumentModal = () => {
+    setIsCreateDocumentModalOpen(false);
   };
 
   const handleCloseDocumentOptionsModal = () => {
@@ -97,7 +98,9 @@ const HomepageBody = () => {
           </div>
         </section>
       </div>
-      {isModalOpen && <CreateDocumentModal closeModal={handleCloseModal} />}
+      {isCreateDocumentModalOpen && (
+        <CreateDocumentModal closeModal={handleCloseCreateDocumentModal} />
+      )}
       {isDocumentOptionsModalOpen && (
         <DocumentOptionsModal
           closeModal={handleCloseDocumentOptionsModal}
