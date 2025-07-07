@@ -203,9 +203,6 @@ function handleFrame(socket, opcode, data) {
             console.error("Invalid action:", action);
             return;
         }
-
-        //const response = JSON.stringify({ echo: jsonData });
-        //sendFrame(socket, OPCODE_TEXT, Buffer.from(response));
       } catch (err) {
         console.error("JSON processing error:", err);
         console.error("Invalid JSON content:", message);
@@ -283,7 +280,7 @@ function leaveRoom(client, roomName) {
 function sendToRoom(roomClient, roomName, message) {
   if (rooms.has(roomName)) {
     console.log(`Sending message to room ${roomName}: ${message}`);
-    //sendFrame(roomClient, OPCODE_TEXT, Buffer.from(message));
+
     const roomToBroadcast = rooms.get(roomName);
     roomToBroadcast.forEach((client) => {
       // send to everyone except the sender
