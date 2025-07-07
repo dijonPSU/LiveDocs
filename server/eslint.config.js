@@ -3,6 +3,17 @@ import globals from "globals";
 
 export default [
   {
+    ignores: [
+      "node_modules/**",
+      "generated/**",
+      "prisma/migrations/**",
+      "dist/**",
+      "build/**",
+      "coverage/**",
+      "*.min.js"
+    ],
+  },
+  {
     files: ["**/*.{js,mjs}"],
     languageOptions: {
       ecmaVersion: 2022,

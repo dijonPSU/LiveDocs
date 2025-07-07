@@ -1,8 +1,3 @@
 export default function ShareDocumentModal() {
-    return (
-        <>
-        test
-        </>
-    )
-
+  return <>test</>;
 }
