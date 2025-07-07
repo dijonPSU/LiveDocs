@@ -53,6 +53,19 @@ model Version {
   diff              Json
   createdAt         DateTime             @default(now())
 
-  documentId        Document             @relation(fields: [documentId], references: [id])
-  userId            User                 @relation(fields: [userId], references: [id])
+  document          Document             @relation(fields: [documentId], references: [id])
+  user              User                 @relation(fields: [userId], references: [id])
+}
+
+
+model Collaborator {
+  id                String               @id @default(cuid())
+  userId            String
+  documentId        String
+  joinedAt          DateTime             @default(now())
+
+  user              User                 @relation(fields: [userId], references: [id])
+  document          Document             @relation(fields: [documentId], references: [id])
+
+  @@unique([userId, documentId])
 }
