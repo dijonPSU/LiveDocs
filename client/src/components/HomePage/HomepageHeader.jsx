@@ -20,9 +20,6 @@ const Header = () => {
     setIsProfileModalOpen(true);
   };
 
-
-
-
   return (
     <>
       <div className="Top-Header">
@@ -36,20 +33,20 @@ const Header = () => {
           </div>
           <div className="header-buttons">
             <button
-             className="header-profile"
-             onClick={() => setIsProfileModalOpen(true)}
-             >
-            DM
+              className="header-profile"
+              onClick={(event) => handleProfileClick(event)}
+            >
+              DM
             </button>
           </div>
         </div>
       </div>
       {isProfileModalOpen && (
         <HomepageProfileModal
-        closeModal={closeProfileModal}
-        position={profileModalPosition}
+          closeModal={closeProfileModal}
+          position={profileModalPosition}
         />
-        )}
+      )}
     </>
   );
 };
