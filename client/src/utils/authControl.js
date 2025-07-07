@@ -8,4 +8,5 @@ const userLogout = async () => {
   }
   return response.json();
 };
+
 export { userLogout };
