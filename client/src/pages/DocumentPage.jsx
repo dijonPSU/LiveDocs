@@ -12,37 +12,34 @@ export default function DocumentPage() {
   const { state } = location;
   const { documentName } = state || "Untitled Document";
 
-
   const navigate = useNavigate();
   const [webSocket, setWebSocket] = useState(null); // so we can access socket from anywhere
   const [documentTitle, setDocumentTitle] = useState(documentName);
   const editorRef = useRef(null);
   const quillRef = useRef(null);
 
-    // connect to server (will only connect when user share document -> have to implement)
-    useEffect(() => {
-      const websocketConnect = connectTestToWebsocket();
-      setWebSocket(websocketConnect);
+  // connect to server (will only connect when user share document -> have to implement)
+  useEffect(() => {
+    const websocketConnect = connectTestToWebsocket();
+    setWebSocket(websocketConnect);
 
-      return () => {
-        websocketConnect.close();
-      };
-    }, [])
+    return () => {
+      websocketConnect.close();
+    };
+  }, []);
 
+  useEffect(() => {
+    if (!webSocket) return;
 
-    useEffect(() => {
-      if (!webSocket) return;
+    const roomName = "test";
 
-      const roomName = "test";
+    webSocket.send(JSON.stringify({ action: "join", roomName: "test" }));
+    console.log("Joined room:", roomName);
 
-      webSocket.send(JSON.stringify({ action: "join", roomName: "test"}));
-      console.log("Joined room:", roomName);
-
-      return () => {
-        webSocket.send(JSON.stringify({ action: "leave", roomName}));
-      };
-    }, [webSocket, documentTitle]);
-
+    return () => {
+      webSocket.send(JSON.stringify({ action: "leave", roomName }));
+    };
+  }, [webSocket, documentTitle]);
 
   //  quill editor { For now until we have a custom text editor }
   useEffect(() => {
@@ -73,11 +70,8 @@ export default function DocumentPage() {
     const handleTextChange = (delta, oldDelta, source) => {
       if (source !== "user") return; // so we can only send changes from user
 
-
       // send changes to server
       sendUpdate(webSocket, delta);
-
-
     };
     quillRef.current.on("text-change", handleTextChange);
 
@@ -85,7 +79,6 @@ export default function DocumentPage() {
       quillRef.current.off("text-change", handleTextChange);
     };
   }, [webSocket]);
-
 
   // use effect for receiving changes from server
   useEffect(() => {
@@ -109,7 +102,6 @@ export default function DocumentPage() {
       webSocket.onmessage = null;
     };
   }, [webSocket]);
-
 
   // Handle document title change
   const handleTitleChange = (e) => {
@@ -155,9 +147,9 @@ export default function DocumentPage() {
   );
 }
 
-
-
 function sendUpdate(webSocket, delta) {
-  webSocket.send(JSON.stringify({ action: "send", message: delta, roomName: "test"}));
+  webSocket.send(
+    JSON.stringify({ action: "send", message: delta, roomName: "test" }),
+  );
   console.log("Sent update to server:", delta);
 }

@@ -70,13 +70,17 @@ const handleSignIn = () => {
   window.location.href = url.toString();
 };
 
-function connectTestToWebsocket(){
-  let ws;
-
-
-  ws = new WebSocket("ws://localhost:8080");
-
-  return ws
+function connectTestToWebsocket() {
+  const ws = new WebSocket("ws://localhost:8080");
+  return ws;
 }
 
-export { get, post, put, deleteRequest, connectToWebSocket, handleSignIn, connectTestToWebsocket };
+export {
+  get,
+  post,
+  put,
+  deleteRequest,
+  connectToWebSocket,
+  handleSignIn,
+  connectTestToWebsocket,
+};
