@@ -47,27 +47,7 @@ const deleteRequest = async (URL) => {
 };
 
 const handleSignIn = () => {
-  console.log("handleSignIn");
-  const oauth2Endpoint = "https://accounts.google.com/o/oauth2/v2/auth";
-
-  const params = {
-    client_id:
-      "210179651380-g1s8fdb4enh5rifte5qnbra1dbuef6ht.apps.googleusercontent.com",
-    redirect_uri: "http://localhost:5173/callback",
-    response_type: "token",
-    scope:
-      "https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/calendar.readonly",
-    include_granted_scopes: "true",
-    state: "pass-through value",
-  };
-
-  const url = new URL(oauth2Endpoint);
-  Object.keys(params).forEach((key) => {
-    url.searchParams.append(key, params[key]);
-  });
-
-  // redirect user to the Google OAuth2.0 authorization page
-  window.location.href = url.toString();
+  window.location.href = "http://localhost:3000/auth/google";
 };
 
 function connectTestToWebsocket() {
