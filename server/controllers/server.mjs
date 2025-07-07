@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "http://localhost:5173",
     credentials: true,
   }),
 );
@@ -35,9 +35,20 @@ app.get(
   "/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/login" }),
   (req, res) => {
-    // Successful authentication, redirect to homepage
     res.redirect("http://localhost:5173/Homepage");
   },
 );
+
+app.post("/auth/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return res.status(500).json({ message: "Logout failed" });
+    }
+    req.session.destroy(() => {
+      res.clearCookie("connect.sid"); // clear cookie by your session name
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+});
 
 export default app;

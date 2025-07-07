@@ -9,11 +9,9 @@
   animation: fadeIn 0.15s ease-out;
 }
 
-
 .profile-modal-content {
   padding: 0;
 }
-
 
 .profile-section {
   display: flex;
@@ -69,13 +67,11 @@
   text-overflow: ellipsis;
 }
 
-
 .modal-divider {
   height: 1px;
   background-color: #e0e0e0;
   margin: 0;
 }
-
 
 .profile-actions {
   padding: 8px 0;
@@ -106,7 +102,6 @@
   display: flex;
   justify-content: center;
 }
-
 
 @media (max-width: 480px) {
   .profile-modal {

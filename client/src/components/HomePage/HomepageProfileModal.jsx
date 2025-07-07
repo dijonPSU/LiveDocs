@@ -1,8 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import "./profileModal.css";
+import { userLogout } from "../../utils/authControl";
+import { useNavigate } from "react-router";
 
 export default function HomepageProfileModal({ closeModal, position }) {
   const modalRef = useRef(null);
+  const Navigate = useNavigate();
 
   // mock data for styling
   const userData = {
@@ -38,10 +41,13 @@ export default function HomepageProfileModal({ closeModal, position }) {
       }
     : {};
 
-  const handleLogout = () => {
-    // will add logic here
-    console.log("Logging out...");
-    closeModal();
+  const handleLogout = async () => {
+    try {
+      await userLogout();
+      Navigate("/");
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
   };
 
   return (
