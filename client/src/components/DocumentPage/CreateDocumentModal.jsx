@@ -38,7 +38,7 @@ export default function CreateDocumentModal({ closeModal }) {
                 const title = document.getElementById("document-name").value;
                 if (title) {
                   handleCreateDocument(title);
-                }else{
+                } else {
                   const inputBar = document.getElementById("document-name");
                   inputBar.placeholder = "Please enter a valid document name";
                   inputBar.style.borderColor = "red";

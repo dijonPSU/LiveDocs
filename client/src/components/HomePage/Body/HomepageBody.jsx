@@ -5,6 +5,7 @@ import "./HomepageBody.css";
 import DocumentOptionsModal from "../Modals/HomepageDocumentOptionsModal";
 import { useUser } from "../../../hooks/useUser";
 import { getUserDocuments } from "../../../utils/dataFetcher";
+import { formatDistanceToNow } from "date-fns";
 
 const HomepageBody = () => {
   const navigate = useNavigate();
@@ -13,23 +14,13 @@ const HomepageBody = () => {
   const [isDocumentOptionsModalOpen, setIsDocumentOptionsModalOpen] =
     useState(false);
   const [modalPosition, setModalPosition] = useState(null);
-
+  const [documents, setDocuments] = useState([]);
   const { user } = useUser();
-  console.log(user);
-  // Sample dummy documents
-  const dummyDocuments = [
-    { id: 1, title: "Project Proposal", lastEdited: "2 days ago" },
-    { id: 2, title: "Meeting Notes", lastEdited: "1 week ago" },
-    { id: 3, title: "Budget Report", lastEdited: "2 weeks ago" },
-    { id: 4, title: "Marketing Plan", lastEdited: "3 weeks ago" },
-    { id: 5, title: "Research Summary", lastEdited: "1 month ago" },
-    { id: 6, title: "Dijon Summary", lastEdited: "3 month ago" },
-  ];
 
   useEffect(() => {
     const loadDocuments = async () => {
       const documents = await getUserDocuments();
-      console.log("User data: ", documents);
+      setDocuments(documents);
     };
 
     if (user) {
@@ -59,7 +50,6 @@ const HomepageBody = () => {
     setIsDocumentOptionsModalOpen(true);
   };
 
-  // will breakdown into smaller components
   return (
     <div className="homepage-body">
       <div className="homepage-content">
@@ -83,7 +73,7 @@ const HomepageBody = () => {
               </div>
             </div>
 
-            {dummyDocuments.map((doc) => (
+            {documents.map((doc) => (
               <div
                 className="document-card"
                 key={doc.id}
@@ -98,7 +88,12 @@ const HomepageBody = () => {
                 </div>
                 <div className="document-info">
                   <p className="document-title">{doc.title}</p>
-                  <p className="document-date">Last edited {doc.lastEdited}</p>
+                  <p className="document-date">
+                    Last Edited:{" "}
+                    {formatDistanceToNow(new Date(doc.updatedAt), {
+                      addSuffix: true,
+                    })}
+                  </p>
                   <div className="document-edit">
                     <button
                       onClick={handleDocumentOptionsClick}
