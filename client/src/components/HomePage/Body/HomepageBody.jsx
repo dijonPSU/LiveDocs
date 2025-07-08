@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CreateDocumentModal from "../../DocumentPage/CreateDocumentModal";
 import "./HomepageBody.css";
 import DocumentOptionsModal from "../Modals/HomepageDocumentOptionsModal";
 import { useUser } from "../../../hooks/useUser";
+import { getUserDocuments } from "../../../utils/dataFetcher";
 
 const HomepageBody = () => {
   const navigate = useNavigate();
@@ -24,6 +25,17 @@ const HomepageBody = () => {
     { id: 5, title: "Research Summary", lastEdited: "1 month ago" },
     { id: 6, title: "Dijon Summary", lastEdited: "3 month ago" },
   ];
+
+  useEffect(() => {
+    const loadDocuments = async () => {
+      const documents = await getUserDocuments();
+      console.log("User data: ", documents);
+    };
+
+    if (user) {
+      loadDocuments();
+    }
+  }, [user]);
 
   const toggleModal = () => {
     setIsCreateDocumentModalOpen(!isCreateDocumentModalOpen);

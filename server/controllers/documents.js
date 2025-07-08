@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export async function getDocuments(req, res) {
     prisma.document.findMany({
-        where: {userId: req.user.id},
+        where: {ownerId: req.user.id},
         orderBy: {updatedAt: 'desc'},
     })
     .then((documents) => res.json(documents))

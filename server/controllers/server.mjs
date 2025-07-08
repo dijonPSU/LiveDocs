@@ -52,27 +52,21 @@ app.post("/auth/logout", (req, res) => {
   });
 });
 
+
+
+app.get("/documents", (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+  return getDocuments(req, res);
+});
+
 app.get("/me", (req, res) => {
   if (req.isAuthenticated()) {
     res.json(req.user);
   } else {
     res.status(401).json({ message: "Not authenticated" });
   }
-});
-
-
-app.get("/documents", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-
-  try{
-    const documents = await documents.getDocuments();
-    return res.status(200).json(documents);
-  } catch (err) {
-    return res.status(500).json({ message: "Internal server error" });
-  }
-
 });
 
 export default app;
