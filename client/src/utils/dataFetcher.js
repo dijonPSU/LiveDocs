@@ -1,49 +1,23 @@
-const get = async (URL) => {
-  const response = await fetch(URL);
-  const data = await response.json();
-  return data;
-};
-
-const post = async (URL, data) => {
-  const response = await fetch(URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-  const responseData = await response.json();
-  return responseData;
-};
-
-const put = async (URL, data) => {
-  const response = await fetch(URL, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-  const responseData = await response.json();
-  return responseData;
-};
-
-const deleteRequest = async (URL) => {
-  const response = await fetch(URL, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  const responseData = await response.json();
-  return responseData;
-};
-
 const connectTestToWebsocket = () => {
   const ws = new WebSocket("ws://localhost:8080");
   return ws;
 };
 
+const getUserData = async () => {
+  const URL = "http://localhost:3000/me";
+  try {
+    const response = await fetch(URL, {
+      method: "GET",
+      credentials: "include",
+    });
+    if (!response.ok) throw new Error("Not authenticated");
 
+    const userData = await response.json();
+    return userData;
+  } catch (error) {
+    console.error("Cannot get user data", error.message);
+    return null;
+  }
+};
 
-export { get, post, put, deleteRequest, connectTestToWebsocket };
+export { connectTestToWebsocket, getUserData };
