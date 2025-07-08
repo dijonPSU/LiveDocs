@@ -1,10 +1,12 @@
 import "./styleHeader.css";
 import { useState } from "react";
 import HomepageProfileModal from "../Modals/HomepageProfileModal";
+import { useUser } from "../../../hooks/useUser"
 
 const Header = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileModalPosition, setProfileModalPosition] = useState(null);
+  const { user } = useUser();
 
   const closeProfileModal = () => {
     setIsProfileModalOpen(false);
@@ -19,6 +21,8 @@ const Header = () => {
     });
     setIsProfileModalOpen(true);
   };
+
+  console.log(user);
 
   return (
     <>

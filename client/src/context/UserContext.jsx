@@ -1,9 +1,10 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { getUserData } from "../utils/dataFetcher.js";
 
-const UserContext = createContext();
+// eslint-disable-next-line react-refresh/only-export-components
+export const UserContext = createContext();
 
-export const UserContextProvider = ({ children }) => {
+export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,5 +23,3 @@ export const UserContextProvider = ({ children }) => {
     </UserContext.Provider>
   );
 };
-
-export const useUser = () => useContext(UserContext);
