@@ -29,6 +29,24 @@
       "internalConsoleOptions": "neverOpen"
     },
     {
+      "name": "Debug Backend Server",
+      "type": "node",
+      "request": "launch",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/server/index.js",
+      "cwd": "${workspaceFolder}/server",
+      "restart": true,
+      "runtimeExecutable": "nodemon",
+      "runtimeArgs": ["--inspect"],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "outputCapture": "std"
+    },
+  
+    {
       "name": "Debug Client (Chrome)",
       "type": "chrome",
       "request": "launch",

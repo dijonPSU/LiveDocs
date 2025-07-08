@@ -20,11 +20,11 @@ export default function DocumentPage() {
 
   // connect to server (will only connect when user share document -> have to implement)
   useEffect(() => {
-    const websocketConnect = connectTestToWebsocket();
-    setWebSocket(websocketConnect);
+    // const websocketConnect = connectTestToWebsocket();
+    //setWebSocket(websocketConnect);
 
     return () => {
-      websocketConnect.close();
+      //websocketConnect.close();
     };
   }, []);
 
