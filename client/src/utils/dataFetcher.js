@@ -7,7 +7,6 @@ const getUserData = async () => {
   const URL = "http://localhost:3000/me";
   try {
     const response = await fetch(URL, {
-      method: "GET",
       credentials: "include",
     });
     if (!response.ok) throw new Error("Not authenticated");
@@ -20,4 +19,21 @@ const getUserData = async () => {
   }
 };
 
-export { connectTestToWebsocket, getUserData };
+const getUserDocuments = async () => {
+  const URL = "http://localhost:3000/documents";
+
+  try {
+    const response = await fetch(URL, {
+      credentials: "include",
+    });
+    if (!response.ok) throw new Error("Not authenticated");
+
+    const documents = await response.json();
+    return documents;
+  } catch (error) {
+    console.error("Cannot get user documents", error.message);
+    return null;
+  }
+};
+
+export { connectTestToWebsocket, getUserData, getUserDocuments };
