@@ -52,8 +52,6 @@ app.post("/auth/logout", (req, res) => {
   });
 });
 
-
-
 app.get("/documents", (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Not authenticated" });
@@ -61,6 +59,11 @@ app.get("/documents", (req, res) => {
   return getDocuments(req, res);
 });
 
+app.post("/documents", (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+});
 app.get("/me", (req, res) => {
   if (req.isAuthenticated()) {
     res.json(req.user);
