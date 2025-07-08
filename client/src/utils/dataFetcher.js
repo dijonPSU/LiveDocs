@@ -1,51 +1,68 @@
-const get = async (URL) => {
-  const response = await fetch(URL);
-  const data = await response.json();
-  return data;
-};
-
-const post = async (URL, data) => {
-  const response = await fetch(URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-  const responseData = await response.json();
-  return responseData;
-};
-
-const put = async (URL, data) => {
-  const response = await fetch(URL, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-  const responseData = await response.json();
-  return responseData;
-};
-
-const deleteRequest = async (URL) => {
-  const response = await fetch(URL, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  const responseData = await response.json();
-  return responseData;
-};
-
-const handleSignIn = () => {
-  window.location.href = "http://localhost:3000/auth/google";
-};
-
 const connectTestToWebsocket = () => {
   const ws = new WebSocket("ws://localhost:8080");
   return ws;
 };
 
-export { get, post, put, deleteRequest, handleSignIn, connectTestToWebsocket };
+const getUserData = async () => {
+  const URL = "http://localhost:3000/me";
+  try {
+    const response = await fetch(URL, {
+      credentials: "include",
+    });
+    if (!response.ok) throw new Error("Not authenticated");
+
+    const userData = await response.json();
+    return userData;
+  } catch (error) {
+    console.error("Cannot get user data", error.message);
+    return null;
+  }
+};
+
+const getUserDocuments = async () => {
+  const URL = "http://localhost:3000/documents";
+
+  try {
+    const response = await fetch(URL, {
+      credentials: "include",
+    });
+    if (!response.ok) throw new Error("Not authenticated");
+
+    const documents = await response.json();
+    return documents;
+  } catch (error) {
+    console.error("Cannot get user documents", error.message);
+    return null;
+  }
+};
+
+const createDocument = async (title) => {
+  const URL = "http://localhost:3000/documents";
+  const data = {
+    title: title,
+  };
+
+  try {
+    const response = await fetch(URL, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error("Not authenticated");
+    console.log("Document created successfully");
+  } catch (error) {
+    console.log("error");
+    console.error("Cannot create document", error.message);
+    return null;
+  }
+};
+
+export {
+  connectTestToWebsocket,
+  getUserData,
+  getUserDocuments,
+  createDocument,
+};

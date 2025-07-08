@@ -1,10 +1,12 @@
 import "./styleHeader.css";
 import { useState } from "react";
-import HomepageProfileModal from "./HomepageProfileModal";
+import HomepageProfileModal from "../Modals/HomepageProfileModal";
+import { useUser } from "../../../hooks/useUser";
 
 const Header = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileModalPosition, setProfileModalPosition] = useState(null);
+  const { user } = useUser();
 
   const closeProfileModal = () => {
     setIsProfileModalOpen(false);
@@ -36,7 +38,7 @@ const Header = () => {
               className="header-profile"
               onClick={(event) => handleProfileClick(event)}
             >
-              DM
+              <img src={user?.image} alt="profile" />
             </button>
           </div>
         </div>

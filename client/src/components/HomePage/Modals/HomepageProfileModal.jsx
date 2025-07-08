@@ -1,19 +1,17 @@
 import React, { useEffect, useRef } from "react";
 import "./profileModal.css";
-import { userLogout } from "../../utils/authControl";
+import { userLogout } from "../../../utils/authControl";
 import { useNavigate } from "react-router";
+import { useUser } from "../../../hooks/useUser";
 
 export default function HomepageProfileModal({ closeModal, position }) {
   const modalRef = useRef(null);
   const Navigate = useNavigate();
+  const { user } = useUser();
 
-  // mock data for styling
   const userData = {
-    name: "Dijon Miller",
-    email: "dijon.miller@example.com",
-    initials: "DM",
-    profileImage:
-      "https://img.freepik.com/free-photo/portrait-expressive-young-man-wearing-formal-suit_273609-6942.jpg?semt=ais_hybrid&w=740",
+    email: user.email,
+    profileImage: user.image,
   };
 
   useEffect(() => {
@@ -56,18 +54,13 @@ export default function HomepageProfileModal({ closeModal, position }) {
         {/* Profile Section */}
         <div className="profile-section">
           <div className="profile-avatar">
-            {userData.profileImage ? (
-              <img
-                src={userData.profileImage}
-                alt="Profile"
-                className="profile-image"
-              />
-            ) : (
-              <div className="profile-initials">{userData.initials}</div>
-            )}
+            <img
+              src={userData.profileImage}
+              alt="Profile"
+              className="profile-image"
+            />
           </div>
           <div className="profile-info">
-            <div className="profile-name">{userData.name}</div>
             <div className="profile-email">{userData.email}</div>
           </div>
         </div>

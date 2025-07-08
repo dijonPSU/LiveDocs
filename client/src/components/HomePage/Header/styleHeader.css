@@ -105,6 +105,11 @@
   cursor: pointer;
 }
 
+.header-profile img {
+  height: 45px;
+  border-radius: 50%;
+}
+
 /* Formatting toolbar */
 .formatting-toolbar {
   display: flex;

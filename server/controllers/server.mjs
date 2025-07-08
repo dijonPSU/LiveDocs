@@ -3,6 +3,7 @@ import session from "express-session";
 import cors from "cors";
 import passport from "passport";
 import initPassport from "../controllers/auth.js"; // ES import
+import { createDocument, getDocuments } from "./documents.js";
 
 const app = express();
 app.use(express.json());
@@ -51,6 +52,19 @@ app.post("/auth/logout", (req, res) => {
   });
 });
 
+app.get("/documents", (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+  return getDocuments(req, res);
+});
+
+app.post("/documents", (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+  return createDocument(req, res);
+});
 app.get("/me", (req, res) => {
   if (req.isAuthenticated()) {
     res.json(req.user);
