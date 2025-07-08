@@ -1,10 +1,3 @@
-import io from "socket.io-client";
-
-const connectToWebSocket = () => {
-  const socket = io("http://localhost:3001");
-  return socket;
-};
-
 const get = async (URL) => {
   const response = await fetch(URL);
   const data = await response.json();
@@ -50,17 +43,9 @@ const handleSignIn = () => {
   window.location.href = "http://localhost:3000/auth/google";
 };
 
-function connectTestToWebsocket() {
+const connectTestToWebsocket = () => {
   const ws = new WebSocket("ws://localhost:8080");
   return ws;
-}
-
-export {
-  get,
-  post,
-  put,
-  deleteRequest,
-  connectToWebSocket,
-  handleSignIn,
-  connectTestToWebsocket,
 };
+
+export { get, post, put, deleteRequest, handleSignIn, connectTestToWebsocket };

@@ -1,6 +1,25 @@
 import "./styleHeader.css";
+import { useState } from "react";
+import HomepageProfileModal from "./HomepageProfileModal";
 
 const Header = () => {
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [profileModalPosition, setProfileModalPosition] = useState(null);
+
+  const closeProfileModal = () => {
+    setIsProfileModalOpen(false);
+  };
+
+  const handleProfileClick = (e) => {
+    e.stopPropagation();
+    const buttonRect = e.target.getBoundingClientRect();
+    setProfileModalPosition({
+      top: buttonRect.top + buttonRect.height,
+      left: buttonRect.left,
+    });
+    setIsProfileModalOpen(true);
+  };
+
   return (
     <>
       <div className="Top-Header">
@@ -13,10 +32,21 @@ const Header = () => {
             <input className="search-input" placeholder="Search" />
           </div>
           <div className="header-buttons">
-            <button className="header-profile">DM</button>
+            <button
+              className="header-profile"
+              onClick={(event) => handleProfileClick(event)}
+            >
+              DM
+            </button>
           </div>
         </div>
       </div>
+      {isProfileModalOpen && (
+        <HomepageProfileModal
+          closeModal={closeProfileModal}
+          position={profileModalPosition}
+        />
+      )}
     </>
   );
 };

@@ -3,6 +3,7 @@ import CallbackPage from "./pages/CallbackPage";
 import Homepage from "./pages/Homepage";
 import DocumentPage from "./pages/DocumentPage";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import ProtectedRoute from "./components/protectedRoute";
 
 import "./App.css";
 
@@ -10,10 +11,25 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/Homepage" element={<Homepage />} />
-        <Route path="/DocumentPage" element={<DocumentPage />} />
-        <Route path="/callback" element={<CallbackPage />} />
         <Route path="/" element={<LoginPage />} />
+        <Route path="/callback" element={<CallbackPage />} />
+
+        <Route
+          path="/Homepage"
+          element={
+            <ProtectedRoute>
+              <Homepage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/DocumentPage"
+          element={
+            <ProtectedRoute>
+              <DocumentPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );
