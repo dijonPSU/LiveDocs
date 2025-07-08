@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import CreateDocumentModal from "../../DocumentPage/CreateDocumentModal";
 import "./HomepageBody.css";
 import DocumentOptionsModal from "../Modals/HomepageDocumentOptionsModal";
+import { useUser } from "../../../hooks/useUser";
 
 const HomepageBody = () => {
   const navigate = useNavigate();
@@ -12,6 +13,8 @@ const HomepageBody = () => {
     useState(false);
   const [modalPosition, setModalPosition] = useState(null);
 
+  const { user } = useUser();
+  console.log(user);
   // Sample dummy documents
   const dummyDocuments = [
     { id: 1, title: "Project Proposal", lastEdited: "2 days ago" },

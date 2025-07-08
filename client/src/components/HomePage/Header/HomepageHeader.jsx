@@ -1,7 +1,7 @@
 import "./styleHeader.css";
 import { useState } from "react";
 import HomepageProfileModal from "../Modals/HomepageProfileModal";
-import { useUser } from "../../../hooks/useUser"
+import { useUser } from "../../../hooks/useUser";
 
 const Header = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -22,8 +22,6 @@ const Header = () => {
     setIsProfileModalOpen(true);
   };
 
-  console.log(user);
-
   return (
     <>
       <div className="Top-Header">
@@ -40,7 +38,7 @@ const Header = () => {
               className="header-profile"
               onClick={(event) => handleProfileClick(event)}
             >
-              DM
+              <img src={user?.image} alt="profile" />
             </button>
           </div>
         </div>
