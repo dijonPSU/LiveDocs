@@ -1,11 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router";
+import { createDocument } from "../../utils/dataFetcher";
 import "./CreateDocumentModal.css";
 
 export default function CreateDocumentModal({ closeModal }) {
   const navigate = useNavigate();
 
-  const handleCreateDocument = () => {
+  const handleCreateDocument = (title) => {
+    createDocument(title);
     navigate("/DocumentPage", {
       state: { documentName: document.getElementById("document-name").value },
     });
@@ -25,13 +27,23 @@ export default function CreateDocumentModal({ closeModal }) {
               className="form-control"
               id="document-name"
               placeholder="Enter document name"
+              required
             />
           </div>
           <div className="document-buttons">
             <button
               type="button"
               className="btn btn-primary"
-              onClick={handleCreateDocument}
+              onClick={() => {
+                const title = document.getElementById("document-name").value;
+                if (title) {
+                  handleCreateDocument(title);
+                }else{
+                  const inputBar = document.getElementById("document-name");
+                  inputBar.placeholder = "Please enter a valid document name";
+                  inputBar.style.borderColor = "red";
+                }
+              }}
             >
               Create
             </button>

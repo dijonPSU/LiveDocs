@@ -36,4 +36,33 @@ const getUserDocuments = async () => {
   }
 };
 
-export { connectTestToWebsocket, getUserData, getUserDocuments };
+const createDocument = async (title) => {
+  const URL = "http://localhost:3000/documents";
+  const data = {
+    title: title,
+  };
+
+  try {
+    const response = await fetch(URL, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error("Not authenticated");
+    console.log("Document created successfully");
+  } catch (error) {
+    console.log("error");
+    console.error("Cannot create document", error.message);
+    return null;
+  }
+};
+
+export {
+  connectTestToWebsocket,
+  getUserData,
+  getUserDocuments,
+  createDocument,
+};
