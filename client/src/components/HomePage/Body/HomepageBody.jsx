@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import CreateDocumentModal from "../DocumentPage/CreateDocumentModal";
+import CreateDocumentModal from "../../DocumentPage/CreateDocumentModal";
 import "./HomepageBody.css";
-import DocumentOptionsModal from "./HomepageDocumentOptionsModal";
+import DocumentOptionsModal from "../Modals/HomepageDocumentOptionsModal";
 
 const HomepageBody = () => {
   const navigate = useNavigate();

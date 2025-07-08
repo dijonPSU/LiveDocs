@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import "./profileModal.css";
-import { userLogout } from "../../utils/authControl";
+import { userLogout } from "../../../utils/authControl";
 import { useNavigate } from "react-router";
 
 export default function HomepageProfileModal({ closeModal, position }) {

@@ -1,3 +1,7 @@
+const handleSignIn = () => {
+  window.location.href = "http://localhost:3000/auth/google";
+};
+
 const userLogout = async () => {
   const response = await fetch("http://localhost:3000/auth/logout", {
     method: "POST",
@@ -9,4 +13,4 @@ const userLogout = async () => {
   return response.json();
 };
 
-export { userLogout };
+export { userLogout, handleSignIn };

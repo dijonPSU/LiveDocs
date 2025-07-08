@@ -39,13 +39,9 @@ const deleteRequest = async (URL) => {
   return responseData;
 };
 
-const handleSignIn = () => {
-  window.location.href = "http://localhost:3000/auth/google";
-};
-
 const connectTestToWebsocket = () => {
   const ws = new WebSocket("ws://localhost:8080");
   return ws;
 };
 
-export { get, post, put, deleteRequest, handleSignIn, connectTestToWebsocket };
+export { get, post, put, deleteRequest, connectTestToWebsocket };

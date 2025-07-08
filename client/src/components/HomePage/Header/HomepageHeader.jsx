@@ -1,6 +1,6 @@
 import "./styleHeader.css";
 import { useState } from "react";
-import HomepageProfileModal from "./HomepageProfileModal";
+import HomepageProfileModal from "../Modals/HomepageProfileModal";
 
 const Header = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
