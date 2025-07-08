@@ -4,7 +4,7 @@ import Homepage from "./pages/Homepage";
 import DocumentPage from "./pages/DocumentPage";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/protectedRoute";
-import  {UserProvider}  from "./context/UserContext";
+import { UserProvider } from "./context/UserContext";
 
 function App() {
   return (
