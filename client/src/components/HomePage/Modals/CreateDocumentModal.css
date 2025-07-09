@@ -21,7 +21,7 @@
 
 .modal-content {
   background-color: white;
-  width: 90%;
+  width: 100%;
   max-width: 500px;
   border-radius: 8px;
   box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
