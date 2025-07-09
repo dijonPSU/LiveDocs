@@ -4,6 +4,7 @@ import { useUser } from "../hooks/useUser";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router";
 import { connectTestToWebsocket } from "../utils/dataFetcher";
+import ShareDocumentModal from "../components/DocumentPage/ShareDocumentModal";
 import "quill/dist/quill.snow.css";
 import "../pages/styles/DocumentPage.css";
 
@@ -17,6 +18,7 @@ export default function DocumentPage() {
   const navigate = useNavigate();
   const [webSocket, setWebSocket] = useState(null); // so we can access socket from anywhere
   const [documentTitle, setDocumentTitle] = useState(documentName);
+  const [showShareModal, setShowShareModal] = useState(false);
   const editorRef = useRef(null);
   const quillRef = useRef(null);
 
@@ -110,6 +112,11 @@ export default function DocumentPage() {
     setDocumentTitle(e.target.value);
   };
 
+  // Handle closing the share modal
+  const closeShareModal = () => {
+    setShowShareModal(false);
+  };
+
   return (
     <div className="document-page">
       {/* Document Header */}
@@ -133,7 +140,12 @@ export default function DocumentPage() {
           >
             Back To Homepage
           </button>
-          <button className="document-button share-button">Share</button>
+          <button
+            className="document-button share-button"
+            onClick={() => setShowShareModal(true)}
+          >
+            Share
+          </button>
           <div className="user-avatar">
             {loading ? (
               "loading"
@@ -152,6 +164,11 @@ export default function DocumentPage() {
           <div ref={editorRef}></div>
         </div>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ShareDocumentModal closeModal={closeShareModal} />
+      )}
     </div>
   );
 }

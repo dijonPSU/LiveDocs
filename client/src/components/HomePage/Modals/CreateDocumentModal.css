@@ -21,14 +21,19 @@
 
 .modal-content {
   background-color: white;
-  width: 100%;
+  width: 99%;
   max-width: 500px;
-  border-radius: 8px;
+  border-radius: 50%;
   box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   transform: scale(0.95);
   animation: scaleIn 0.3s ease forwards;
 }
+
+.modal-header {
+  padding: 20px 20px 0px 20px;
+}
+
 
 .edit-options-modal-content {
   display: flex;
@@ -63,8 +68,13 @@
 .form-group label {
   display: block;
   margin-bottom: 8px;
+
   font-weight: 500;
   color: #555;
+}
+
+.form-group input{
+  width: 95%;
 }
 
 .form-control {
