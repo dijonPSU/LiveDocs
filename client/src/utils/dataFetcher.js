@@ -48,6 +48,7 @@ const createDocument = async (title) => {
     });
     if (!response.ok) throw new Error("Not authenticated");
     console.log("Document created successfully");
+    return await response.json();
   } catch (error) {
     console.log("error");
     console.error("Cannot create document", error.message);
@@ -97,10 +98,37 @@ const savePatch = async (documentId, delta, userId) => {
   }
 };
 
+const shareDocument = async (documentId, email) => {
+
+  const URL = `http://localhost:3000/documents/${documentId}/share`;
+
+  const body = {
+    documentId: documentId,
+    email,
+  };
+
+  try {
+    const response = await fetch(URL, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error("Not authenticated");
+    return await response.json();
+  } catch (error) {
+    console.error("Cannot share document", error.message);
+    return null;
+  }
+};
+
 export {
   getUserData,
   getUserDocuments,
   createDocument,
   getDocumentContent,
   savePatch,
+  shareDocument,
 };

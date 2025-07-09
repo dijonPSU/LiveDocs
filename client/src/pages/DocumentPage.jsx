@@ -162,7 +162,12 @@ export default function DocumentPage() {
       </div>
 
       {/* Share Modal */}
-      {showShareModal && <ShareDocumentModal closeModal={closeShareModal} />}
+      {showShareModal && (
+        <ShareDocumentModal
+          closeModal={closeShareModal}
+          documentId={documentId}
+        />
+      )}
     </div>
   );
 }
