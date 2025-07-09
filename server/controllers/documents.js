@@ -4,7 +4,12 @@ const prisma = new PrismaClient();
 export async function getDocuments(req, res) {
   try {
     const documents = await prisma.document.findMany({
-      where: { ownerId: req.user.id },
+      where: {
+        OR: [
+          { ownerId: req.user.id },
+          { collaborators: { some: { userId: req.user.id } } },
+        ],
+      },
       orderBy: { updatedAt: "desc" },
     });
     res.json(documents);
@@ -30,7 +35,6 @@ export async function createDocument(req, res) {
 
 export async function savePatch(req, res) {
   const { documentId, userId, delta } = req.body;
-
   try {
     const count = await prisma.version.count({
       where: { documentId },
@@ -104,4 +108,36 @@ export async function getDocumentContent(req, res) {
     console.error(err);
     res.status(500).json({ message: "Failed to load document content" });
   }
+}
+
+export async function shareDocument(req, res) {
+  const documentId = req.params.id;
+  const { email } = req.body;
+
+  const document = await prisma.document.findUnique({
+    where: { id: documentId },
+  });
+
+  if (!document || document.ownerId !== req.user.id) {
+    return res
+      .status(403)
+      .json({ message: "You're not the owner of this document" });
+  }
+
+  const targetUser = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!targetUser) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  await prisma.collaborator.create({
+    data: {
+      userId: targetUser.id,
+      documentId,
+    },
+  });
+
+  res.status(200).json({ message: "Added collaborator" });
 }
