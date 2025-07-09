@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import CreateDocumentModal from "../../Homepage/Modals/CreateDocumentModal";
 import "./HomepageBody.css";
 import DocumentOptionsModal from "../Modals/HomepageDocumentOptionsModal";
 import { useUser } from "../../../hooks/useUser";
 import { getUserDocuments } from "../../../utils/dataFetcher";
-import { formatDistanceToNow } from "date-fns";
 import DocumentCard from "../Body/DocumentCard";
 
 const HomepageBody = () => {
-  const navigate = useNavigate();
   const [isCreateDocumentModalOpen, setIsCreateDocumentModalOpen] =
     useState(false);
   const [isDocumentOptionsModalOpen, setIsDocumentOptionsModalOpen] =
