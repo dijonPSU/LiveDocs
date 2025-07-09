@@ -1,8 +1,3 @@
-const connectTestToWebsocket = () => {
-  const ws = new WebSocket("ws://localhost:8080");
-  return ws;
-};
-
 const getUserData = async () => {
   const URL = "http://localhost:3000/me";
   try {
@@ -78,13 +73,13 @@ const getDocumentContent = async (documentId) => {
 };
 
 const savePatch = async (documentId, delta, userId) => {
-  const URL = `http://localhost:3000/documents/${documentId}/patches`;;
+  const URL = `http://localhost:3000/documents/${documentId}/patches`;
 
   const body = {
     documentId: documentId,
     delta,
     userId,
-  }
+  };
 
   try {
     const response = await fetch(URL, {
@@ -103,7 +98,6 @@ const savePatch = async (documentId, delta, userId) => {
 };
 
 export {
-  connectTestToWebsocket,
   getUserData,
   getUserDocuments,
   createDocument,
