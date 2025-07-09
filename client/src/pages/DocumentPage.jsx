@@ -1,49 +1,48 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Quill from "quill";
 import { useUser } from "../hooks/useUser";
-import { useLocation } from "react-router-dom";
-import { useNavigate } from "react-router";
-import { connectTestToWebsocket } from "../utils/dataFetcher";
+import { useLocation, useNavigate } from "react-router-dom";
+import useWebSocket from "../hooks/useWebsocket";
 import ShareDocumentModal from "../components/DocumentPage/ShareDocumentModal";
 import "quill/dist/quill.snow.css";
 import "../pages/styles/DocumentPage.css";
+import { getDocumentContent, savePatch } from "../utils/dataFetcher";
 
 export default function DocumentPage() {
-  // get document name from navigation state
   const location = useLocation();
+  const navigate = useNavigate();
+
   const { state } = location;
-  const { documentName } = state || "Untitled Document";
+  const { documentName = "Untitled Document", documentId } = state || {};
   const { user, loading } = useUser();
 
-  const navigate = useNavigate();
-  const [webSocket, setWebSocket] = useState(null); // so we can access socket from anywhere
   const [documentTitle, setDocumentTitle] = useState(documentName);
   const [showShareModal, setShowShareModal] = useState(false);
   const editorRef = useRef(null);
   const quillRef = useRef(null);
 
-  // connect to server (will only connect when user share document -> have to implement)
-  useEffect(() => {
-    // const websocketConnect = connectTestToWebsocket();
-    //setWebSocket(websocketConnect);
-
-    return () => {
-      //websocketConnect.close();
-    };
+  // added callback for WebSocket messages to avoid effect re-run
+  const handleSocketMessage = useCallback((data) => {
+    if (data.action === "send" && quillRef.current) {
+      quillRef.current.updateContents(data.message);
+      console.log("Patch applied:", data.message);
+    }
   }, []);
 
+  const { sendMessage, connected } = useWebSocket(handleSocketMessage);
+
+  // join room on connect (MIGHT CHANGE IT SO CLIENT ONLY JOIN ROOM IF DOCUMENT IS SHARED WITH OTHERS)
   useEffect(() => {
-    if (!webSocket) return;
+    if (!connected || !documentId) return;
 
-    const roomName = "test";
-
-    webSocket.send(JSON.stringify({ action: "join", roomName: "test" }));
-    console.log("Joined room:", roomName);
+    sendMessage({ action: "join", roomName: documentId });
+    console.log("Joined room:", documentId);
 
     return () => {
-      webSocket.send(JSON.stringify({ action: "leave", roomName }));
+      sendMessage({ action: "leave", roomName: documentId });
+      console.log("Left room:", documentId);
     };
-  }, [webSocket, documentTitle]);
+  }, [connected, documentId, sendMessage]);
 
   //  quill editor { For now until we have a custom text editor }
   useEffect(() => {
@@ -67,59 +66,56 @@ export default function DocumentPage() {
     }
   }, []);
 
-  // use effect for sending changes to server
+  // get document content
   useEffect(() => {
-    if (webSocket == null || quillRef.current == null) return;
+    const loadContent = async () => {
+      if (!quillRef.current || !documentId) return;
 
-    const handleTextChange = (delta, oldDelta, source) => {
-      if (source !== "user") return; // so we can only send changes from user
+      const content = await getDocumentContent(documentId);
+      if (!content) return;
 
-      // send changes to server
-      sendUpdate(webSocket, delta);
+      const { snapshot, patches } = content;
+      if (snapshot) quillRef.current.setContents(snapshot);
+      if (patches?.length) {
+        patches.forEach((patch) => quillRef.current.updateContents(patch.diff));
+      }
     };
-    quillRef.current.on("text-change", handleTextChange);
+    loadContent();
+  }, [documentId]);
 
+  // send user changes through webSocket and save patches
+  useEffect(() => {
+    if (!connected || !quillRef.current) return;
+
+    const handleTextChange = async (delta, oldDelta, source) => {
+      if (source !== "user") return;
+      console.log("Sending changes to server:", delta);
+
+      sendMessage({
+        action: "send",
+        message: delta,
+        roomName: documentId,
+      });
+
+      try {
+        await savePatch(documentId, delta, user?.id);
+      } catch (error) {
+        console.error("Error saving patch:", error);
+      }
+    };
+
+    quillRef.current.on("text-change", handleTextChange);
     return () => {
       quillRef.current.off("text-change", handleTextChange);
     };
-  }, [webSocket]);
+  }, [connected, documentId, sendMessage, user?.id]);
 
-  // use effect for receiving changes from server
-  useEffect(() => {
-    if (!webSocket || !quillRef.current) return;
+  const handleTitleChange = (e) => setDocumentTitle(e.target.value);
 
-    const handleServerChanges = (delta) => {
-      console.warn("Updated: ", delta);
-      quillRef.current.updateContents(delta);
-    };
-
-    const onMessage = (event) => {
-      console.log("Received changes from server:", event.data);
-      const data = JSON.parse(event.data);
-      const delta = data.message;
-      handleServerChanges(delta);
-    };
-
-    webSocket.onmessage = onMessage;
-
-    return () => {
-      webSocket.onmessage = null;
-    };
-  }, [webSocket]);
-
-  // Handle document title change
-  const handleTitleChange = (e) => {
-    setDocumentTitle(e.target.value);
-  };
-
-  // Handle closing the share modal
-  const closeShareModal = () => {
-    setShowShareModal(false);
-  };
+  const closeShareModal = () => setShowShareModal(false);
 
   return (
     <div className="document-page">
-      {/* Document Header */}
       <div className="document-header">
         <div className="document-logo">LiveDocs</div>
 
@@ -166,16 +162,7 @@ export default function DocumentPage() {
       </div>
 
       {/* Share Modal */}
-      {showShareModal && (
-        <ShareDocumentModal closeModal={closeShareModal} />
-      )}
+      {showShareModal && <ShareDocumentModal closeModal={closeShareModal} />}
     </div>
   );
-}
-
-function sendUpdate(webSocket, delta) {
-  webSocket.send(
-    JSON.stringify({ action: "send", message: delta, roomName: "test" }),
-  );
-  console.log("Sent update to server:", delta);
 }
