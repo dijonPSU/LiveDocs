@@ -44,12 +44,13 @@ model Document {
   versions          Version[]
 }
 
-
 model Version {
   id                String               @id @default(cuid())
   documentId        String
   userId            String
+  versionNumber     Int
   diff              Json
+  isSnapshot        Boolean              @default(false)
   createdAt         DateTime             @default(now())
 
   document          Document             @relation(fields: [documentId], references: [id])
