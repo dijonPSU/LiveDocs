@@ -6,16 +6,17 @@ import "./CreateDocumentModal.css";
 export default function CreateDocumentModal({ closeModal }) {
   const navigate = useNavigate();
 
-  const handleCreateDocument = (title) => {
+  const handleCreateDocument = async (title) => {
     if (title === "") {
       const inputBar = document.getElementById("document-name");
       inputBar.placeholder = "Please enter a valid document name";
       inputBar.style.borderColor = "red";
       return;
     } else {
-      createDocument(title);
+      const data = await createDocument(title);
+      const docID = data.id;
       navigate("/DocumentPage", {
-        state: { documentName: document.getElementById("document-name").value },
+        state: { documentName: document.getElementById("document-name").value, documentId: docID },
       });
     }
   };
