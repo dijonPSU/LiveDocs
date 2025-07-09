@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Quill from "quill";
+import { useUser } from "../hooks/useUser";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router";
 import { connectTestToWebsocket } from "../utils/dataFetcher";
@@ -11,6 +12,7 @@ export default function DocumentPage() {
   const location = useLocation();
   const { state } = location;
   const { documentName } = state || "Untitled Document";
+  const { user, loading } = useUser();
 
   const navigate = useNavigate();
   const [webSocket, setWebSocket] = useState(null); // so we can access socket from anywhere
@@ -132,8 +134,15 @@ export default function DocumentPage() {
             Back To Homepage
           </button>
           <button className="document-button share-button">Share</button>
-          <div className="user-avatar">DM</div>{" "}
-          {/* PLACEHOLER will change when userAUTH is done */}
+          <div className="user-avatar">
+            {loading ? (
+              "loading"
+            ) : user?.image ? (
+              <img src={user.image} alt="User Avatar" />
+            ) : (
+              "No Avatar"
+            )}
+          </div>
         </div>
       </div>
 
