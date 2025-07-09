@@ -27,3 +27,31 @@ export async function createDocument(req, res) {
     res.status(500).json({ message: "Failed to create document" });
   }
 }
+
+export async function savePatch(req, res) {
+  const { documentId, userId, delta } = req.body;
+
+  try {
+    const count = await prisma.version.count({
+      where: { documentId },
+    });
+
+    const version = await prisma.version.create({
+      data: {
+        documentId,
+        userId,
+        diff: delta,
+        versionNumber: count + 1,
+        isSnapshot: false,
+      },
+    });
+
+    res.status(201).json(version);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to create version" });
+  }
+}
+
+
+
