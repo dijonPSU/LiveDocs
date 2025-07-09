@@ -73,7 +73,7 @@ export async function updateSnapshot(req, res) {
 }
 
 export async function getDocumentContent(req, res) {
-  const { documentId } = req.params;
+  const documentId = req.params.id;
 
   try {
     const doc = await prisma.document.findUnique({

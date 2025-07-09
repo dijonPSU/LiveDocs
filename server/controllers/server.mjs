@@ -58,7 +58,6 @@ app.post("/auth/logout", (req, res) => {
   });
 });
 
-
 // Authenicated routes
 
 app.use((req, res, next) => {
