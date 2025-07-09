@@ -3,7 +3,13 @@ import session from "express-session";
 import cors from "cors";
 import passport from "passport";
 import initPassport from "../controllers/auth.js"; // ES import
-import { createDocument, getDocuments } from "./documents.js";
+import {
+  createDocument,
+  getDocuments,
+  savePatch,
+  getDocumentContent,
+  updateSnapshot,
+} from "./documents.js";
 
 const app = express();
 app.use(express.json());
@@ -52,25 +58,24 @@ app.post("/auth/logout", (req, res) => {
   });
 });
 
-app.get("/documents", (req, res) => {
+
+// Authenicated routes
+
+app.use((req, res, next) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Not authenticated" });
   }
-  return getDocuments(req, res);
+  next();
 });
 
-app.post("/documents", (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-  return createDocument(req, res);
-});
+app.get("/documents", getDocuments);
+app.get("/documents/:id/content", getDocumentContent);
+app.post("/documents", createDocument);
+app.post("/documents/:id/patches", savePatch);
+app.put("/documents/:id/snapshot", updateSnapshot);
+
 app.get("/me", (req, res) => {
-  if (req.isAuthenticated()) {
-    res.json(req.user);
-  } else {
-    res.status(401).json({ message: "Not authenticated" });
-  }
+  res.json(req.user);
 });
 
 export default app;
