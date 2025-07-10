@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import CreateDocumentModal from "../../Homepage/Modals/CreateDocumentModal";
 import "./HomepageBody.css";
 import DocumentOptionsModal from "../Modals/HomepageDocumentOptionsModal";
 import { useUser } from "../../../hooks/useUser";
 import { getUserDocuments } from "../../../utils/dataFetcher";
-import { formatDistanceToNow } from "date-fns";
+import DocumentCard from "../Body/DocumentCard";
 
 const HomepageBody = () => {
-  const navigate = useNavigate();
   const [isCreateDocumentModalOpen, setIsCreateDocumentModalOpen] =
     useState(false);
   const [isDocumentOptionsModalOpen, setIsDocumentOptionsModalOpen] =
@@ -74,36 +72,11 @@ const HomepageBody = () => {
             </div>
 
             {documents.map((doc) => (
-              <div
-                className="document-card"
+              <DocumentCard
                 key={doc.id}
-                onClick={() => navigate("/DocumentPage")}
-              >
-                <div className="document-preview">
-                  <div className="preview-content">
-                    <div className="preview-line"></div>
-                    <div className="preview-line short"></div>
-                    <div className="preview-line medium"></div>
-                  </div>
-                </div>
-                <div className="document-info">
-                  <p className="document-title">{doc.title}</p>
-                  <p className="document-date">
-                    Last Edited:{" "}
-                    {formatDistanceToNow(new Date(doc.updatedAt), {
-                      addSuffix: true,
-                    })}
-                  </p>
-                  <div className="document-edit">
-                    <button
-                      onClick={handleDocumentOptionsClick}
-                      className="document-button"
-                    >
-                      <strong>EDIT</strong>
-                    </button>
-                  </div>
-                </div>
-              </div>
+                doc={doc}
+                onEditClick={handleDocumentOptionsClick}
+              />
             ))}
           </div>
         </section>

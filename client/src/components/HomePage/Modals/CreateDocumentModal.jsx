@@ -6,11 +6,22 @@ import "./CreateDocumentModal.css";
 export default function CreateDocumentModal({ closeModal }) {
   const navigate = useNavigate();
 
-  const handleCreateDocument = (title) => {
-    createDocument(title);
-    navigate("/DocumentPage", {
-      state: { documentName: document.getElementById("document-name").value },
-    });
+  const handleCreateDocument = async (title) => {
+    if (title === "") {
+      const inputBar = document.getElementById("document-name");
+      inputBar.placeholder = "Please enter a valid document name";
+      inputBar.style.borderColor = "red";
+      return;
+    } else {
+      const data = await createDocument(title);
+      const docID = data.id;
+      navigate("/DocumentPage", {
+        state: {
+          documentName: document.getElementById("document-name").value,
+          documentId: docID,
+        },
+      });
+    }
   };
 
   return (
@@ -36,13 +47,7 @@ export default function CreateDocumentModal({ closeModal }) {
               className="btn btn-primary"
               onClick={() => {
                 const title = document.getElementById("document-name").value;
-                if (title) {
-                  handleCreateDocument(title);
-                } else {
-                  const inputBar = document.getElementById("document-name");
-                  inputBar.placeholder = "Please enter a valid document name";
-                  inputBar.style.borderColor = "red";
-                }
+                handleCreateDocument(title);
               }}
             >
               Create

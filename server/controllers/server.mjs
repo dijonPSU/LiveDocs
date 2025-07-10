@@ -9,6 +9,7 @@ import {
   savePatch,
   getDocumentContent,
   updateSnapshot,
+  shareDocument,
 } from "./documents.js";
 
 const app = express();
@@ -58,7 +59,6 @@ app.post("/auth/logout", (req, res) => {
   });
 });
 
-
 // Authenicated routes
 
 app.use((req, res, next) => {
@@ -72,6 +72,7 @@ app.get("/documents", getDocuments);
 app.get("/documents/:id/content", getDocumentContent);
 app.post("/documents", createDocument);
 app.post("/documents/:id/patches", savePatch);
+app.post("/documents/:id/share", shareDocument);
 app.put("/documents/:id/snapshot", updateSnapshot);
 
 app.get("/me", (req, res) => {

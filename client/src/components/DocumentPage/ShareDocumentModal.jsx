@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
+import { shareDocument } from "../../utils/dataFetcher";
 import "./ShareDocumentModal.css";
 
-export default function ShareDocumentModal({ closeModal }) {
+export default function ShareDocumentModal({ closeModal, documentId }) {
+  const [email, setEmail] = useState("");
+
   return (
     <div className="modal-overlay active">
       <div className="modal-content">
@@ -16,6 +19,8 @@ export default function ShareDocumentModal({ closeModal }) {
               className="form-control"
               id="user-search"
               placeholder="Enter email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div className="document-buttons">
@@ -23,8 +28,9 @@ export default function ShareDocumentModal({ closeModal }) {
               type="button"
               className="btn btn-primary"
               onClick={() => {
-                // Future functionality will be added here
-                console.log("Share functionality to be implemented");
+                // TODO: Add logic incase it fails
+                shareDocument(documentId, email);
+                closeModal();
               }}
             >
               Share
