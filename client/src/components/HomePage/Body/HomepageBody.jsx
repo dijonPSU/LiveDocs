@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import CreateDocumentModal from "../../Homepage/Modals/CreateDocumentModal";
+import CreateDocumentModal from "../../HomePage/Modals/CreateDocumentModal";
 import "./HomepageBody.css";
 import DocumentOptionsModal from "../Modals/HomepageDocumentOptionsModal";
 import { useUser } from "../../../hooks/useUser";
