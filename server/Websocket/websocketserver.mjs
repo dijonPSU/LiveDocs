@@ -189,6 +189,7 @@ function handleFrame(socket, opcode, data) {
                 socket,
                 roomName,
                 JSON.stringify({
+                  action: "send",
                   from: "room",
                   roomName,
                   message: msg,

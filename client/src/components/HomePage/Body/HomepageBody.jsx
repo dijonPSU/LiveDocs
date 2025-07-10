@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import CreateDocumentModal from "../../Homepage/Modals/CreateDocumentModal";
+import CreateDocumentModal from "../../HomePage/Modals/CreateDocumentModal";
 import "./HomepageBody.css";
 import DocumentOptionsModal from "../Modals/HomepageDocumentOptionsModal";
 import { useUser } from "../../../hooks/useUser";
 import { getUserDocuments } from "../../../utils/dataFetcher";
-import DocumentCard from "../Body/DocumentCard";
+import DocumentCard from "./DocumentCardC";
 
 const HomepageBody = () => {
   const [isCreateDocumentModalOpen, setIsCreateDocumentModalOpen] =

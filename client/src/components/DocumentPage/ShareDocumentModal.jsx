@@ -5,6 +5,23 @@ import "./ShareDocumentModal.css";
 export default function ShareDocumentModal({ closeModal, documentId }) {
   const [email, setEmail] = useState("");
 
+  const handleShareDocument = async (documentId, email) => {
+    try {
+      const message = await shareDocument(documentId, email);
+      console.log(message);
+      if (message.message === "Added collaborator") {
+        closeModal();
+      } else {
+        const form = document.getElementById("user-search");
+        form.style.borderColor = "red";
+      }
+    } catch {
+      const form = document.getElementById("user-search");
+      form.style.borderColor = "red";
+      form.placeholder = "Invalid email address";
+    }
+  };
+
   return (
     <div className="modal-overlay active">
       <div className="modal-content">
@@ -28,9 +45,7 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
               type="button"
               className="btn btn-primary"
               onClick={() => {
-                // TODO: Add logic incase it fails
-                shareDocument(documentId, email);
-                closeModal();
+                handleShareDocument(documentId, email);
               }}
             >
               Share
