@@ -1,6 +1,6 @@
 import React from "react";
 import OAuthSignIn from "../components/OAuth";
-import "../pages/styles/LoginPage.css";
+import "../pages/styles/loginPage.css";
 import titleLogo from "../assets/titleLogo.webp";
 
 const LoginPage = () => {

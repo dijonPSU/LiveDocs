@@ -7,11 +7,11 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
 
   const handleShareDocument = async (documentId, email) => {
     try {
-      const message = await shareDocument(documentId, email)
+      const message = await shareDocument(documentId, email);
       console.log(message);
       if (message.message === "Added collaborator") {
         closeModal();
-      }else{
+      } else {
         const form = document.getElementById("user-search");
         form.style.borderColor = "red";
       }
@@ -20,7 +20,7 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
       form.style.borderColor = "red";
       form.placeholder = "Invalid email address";
     }
-  }
+  };
 
   return (
     <div className="modal-overlay active">

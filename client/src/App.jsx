@@ -1,6 +1,6 @@
 import LoginPage from "./pages/LoginPage";
 import CallbackPage from "./pages/CallbackPage";
-import Homepage from "./pages/Homepage";
+import HomePage from "./pages/HomePageC.jsx";
 import DocumentPage from "./pages/DocumentPage";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/protectedRoute";
@@ -18,7 +18,7 @@ function App() {
             path="/Homepage"
             element={
               <ProtectedRoute>
-                <Homepage />
+                <HomePage />
               </ProtectedRoute>
             }
           />
