@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { createDocument } from "../../utils/dataFetcher";
+import { createDocument } from "../../../utils/dataFetcher";
 import "./CreateDocumentModal.css";
 
 export default function CreateDocumentModal({ closeModal }) {

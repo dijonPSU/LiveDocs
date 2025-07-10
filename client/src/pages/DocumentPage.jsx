@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import Quill from "quill";
+import { useUser } from "../hooks/useUser";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router";
 import { connectTestToWebsocket } from "../utils/dataFetcher";
+import ShareDocumentModal from "../components/DocumentPage/ShareDocumentModal";
 import "quill/dist/quill.snow.css";
 import "../pages/styles/DocumentPage.css";
 
@@ -11,20 +13,22 @@ export default function DocumentPage() {
   const location = useLocation();
   const { state } = location;
   const { documentName } = state || "Untitled Document";
+  const { user, loading } = useUser();
 
   const navigate = useNavigate();
   const [webSocket, setWebSocket] = useState(null); // so we can access socket from anywhere
   const [documentTitle, setDocumentTitle] = useState(documentName);
+  const [showShareModal, setShowShareModal] = useState(false);
   const editorRef = useRef(null);
   const quillRef = useRef(null);
 
   // connect to server (will only connect when user share document -> have to implement)
   useEffect(() => {
-    const websocketConnect = connectTestToWebsocket();
-    setWebSocket(websocketConnect);
+    // const websocketConnect = connectTestToWebsocket();
+    //setWebSocket(websocketConnect);
 
     return () => {
-      websocketConnect.close();
+      //websocketConnect.close();
     };
   }, []);
 
@@ -108,6 +112,11 @@ export default function DocumentPage() {
     setDocumentTitle(e.target.value);
   };
 
+  // Handle closing the share modal
+  const closeShareModal = () => {
+    setShowShareModal(false);
+  };
+
   return (
     <div className="document-page">
       {/* Document Header */}
@@ -131,9 +140,21 @@ export default function DocumentPage() {
           >
             Back To Homepage
           </button>
-          <button className="document-button share-button">Share</button>
-          <div className="user-avatar">DM</div>{" "}
-          {/* PLACEHOLER will change when userAUTH is done */}
+          <button
+            className="document-button share-button"
+            onClick={() => setShowShareModal(true)}
+          >
+            Share
+          </button>
+          <div className="user-avatar">
+            {loading ? (
+              "loading"
+            ) : user?.image ? (
+              <img src={user.image} alt="User Avatar" />
+            ) : (
+              "No Avatar"
+            )}
+          </div>
         </div>
       </div>
 
@@ -143,6 +164,11 @@ export default function DocumentPage() {
           <div ref={editorRef}></div>
         </div>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ShareDocumentModal closeModal={closeShareModal} />
+      )}
     </div>
   );
 }

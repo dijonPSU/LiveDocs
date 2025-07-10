@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import CreateDocumentModal from "../../DocumentPage/CreateDocumentModal";
+import CreateDocumentModal from "../../Homepage/Modals/CreateDocumentModal";
 import "./HomepageBody.css";
 import DocumentOptionsModal from "../Modals/HomepageDocumentOptionsModal";
 import { useUser } from "../../../hooks/useUser";
