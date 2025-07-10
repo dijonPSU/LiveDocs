@@ -4,7 +4,7 @@ const getUserData = async () => {
     const response = await fetch(URL, {
       credentials: "include",
     });
-    if (!response.ok) throw new Error("Not authenticated");
+    if (!response.ok) throw new Error("Failed to fetch user data");
 
     const userData = await response.json();
     return userData;
@@ -21,7 +21,7 @@ const getUserDocuments = async () => {
     const response = await fetch(URL, {
       credentials: "include",
     });
-    if (!response.ok) throw new Error("Not authenticated");
+    if (!response.ok) throw new Error("Failed to fetch user documents");
 
     const documents = await response.json();
     return documents;
@@ -46,7 +46,7 @@ const createDocument = async (title) => {
       },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error("Not authenticated");
+    if (!response.ok) throw new Error("Failed to create document");
     console.log("Document created successfully");
     return await response.json();
   } catch (error) {
@@ -63,7 +63,7 @@ const getDocumentContent = async (documentId) => {
     const response = await fetch(URL, {
       credentials: "include",
     });
-    if (!response.ok) throw new Error("Not authenticated");
+    if (!response.ok) throw new Error("Failed to fetch document content");
     const content = await response.json();
     console.log("Document content fetched successfully");
     return content;
@@ -91,7 +91,7 @@ const savePatch = async (documentId, delta, userId) => {
       },
       body: JSON.stringify(body),
     });
-    if (!response.ok) throw new Error("Not authenticated");
+    if (!response.ok) throw new Error("Failed to save patch");
   } catch (error) {
     console.error("Cannot save patch", error.message);
     return null;
@@ -115,10 +115,27 @@ const shareDocument = async (documentId, email) => {
       },
       body: JSON.stringify(body),
     });
-    if (!response.ok) throw new Error("Not authenticated");
+    if (!response.ok) throw new Error("Failed to share document");
     return await response.json();
   } catch (error) {
     console.error("Cannot share document", error.message);
+    return null;
+  }
+};
+
+const getCollaborators = async (documentId) => {
+  const URL = `http://localhost:3000/documents/${documentId}/collaborators`;
+
+  try {
+    const response = await fetch(URL, {
+      credentials: "include",
+    });
+    if (!response.ok) throw new Error("Failed to fetch collaborators");
+
+    const collaborators = await response.json();
+    return collaborators;
+  } catch (error) {
+    console.error("Cannot get collaborators", error.message);
     return null;
   }
 };
@@ -130,4 +147,5 @@ export {
   getDocumentContent,
   savePatch,
   shareDocument,
+  getCollaborators,
 };
