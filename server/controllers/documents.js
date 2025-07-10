@@ -113,33 +113,59 @@ export async function getDocumentContent(req, res) {
 }
 
 export async function shareDocument(req, res) {
-  const documentId = req.params.id;
-  const { email } = req.body;
+  try {
+    const documentId = req.params.id;
+    const { email } = req.body;
 
-  const document = await prisma.document.findUnique({
-    where: { id: documentId },
-  });
+    const document = await prisma.document.findUnique({
+      where: { id: documentId },
+    });
 
-  if (!document || document.ownerId !== req.user.id) {
-    return res
-      .status(403)
-      .json({ message: "You're not the owner of this document" });
+    if (!document || document.ownerId !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "You're not the owner of this document" });
+    }
+
+    const targetUser = await prisma.user.findUnique({ where: { email } });
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await prisma.collaborator.create({
+      data: { userId: targetUser.id, documentId },
+    });
+
+    res.status(200).json({ message: "Added collaborator" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to share document" });
   }
+}
 
-  const targetUser = await prisma.user.findUnique({
-    where: { email },
-  });
+export async function getDocumentCollaborators(req, res) {
+  try {
+    const documentId = req.params.id;
 
-  if (!targetUser) {
-    return res.status(404).json({ message: "User not found" });
+    const collaborators = await prisma.collaborator.findMany({
+      where: { documentId },
+      select: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    // convert to array
+    const users = collaborators.map((c) => c.user);
+
+    res.status(200).json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to get collaborators" });
   }
-
-  await prisma.collaborator.create({
-    data: {
-      userId: targetUser.id,
-      documentId,
-    },
-  });
-
-  res.status(200).json({ message: "Added collaborator" });
 }
