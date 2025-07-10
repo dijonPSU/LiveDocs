@@ -16,7 +16,10 @@ export default function CreateDocumentModal({ closeModal }) {
       const data = await createDocument(title);
       const docID = data.id;
       navigate("/DocumentPage", {
-        state: { documentName: document.getElementById("document-name").value, documentId: docID },
+        state: {
+          documentName: document.getElementById("document-name").value,
+          documentId: docID,
+        },
       });
     }
   };

@@ -99,7 +99,6 @@ const savePatch = async (documentId, delta, userId) => {
 };
 
 const shareDocument = async (documentId, email) => {
-
   const URL = `http://localhost:3000/documents/${documentId}/share`;
 
   const body = {
