@@ -28,7 +28,9 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
               type="button"
               className="btn btn-primary"
               onClick={() => {
+                // TODO: Add logic incase it fails
                 shareDocument(documentId, email);
+                closeModal();
               }}
             >
               Share
