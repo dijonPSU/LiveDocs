@@ -113,33 +113,85 @@ export async function getDocumentContent(req, res) {
 }
 
 export async function shareDocument(req, res) {
+  try {
+    const documentId = req.params.id;
+    const { email } = req.body;
+
+    const document = await prisma.document.findUnique({
+      where: { id: documentId },
+    });
+
+    if (!document || document.ownerId !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "You're not the owner of this document" });
+    }
+
+    const targetUser = await prisma.user.findUnique({ where: { email } });
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await prisma.collaborator.create({
+      data: { userId: targetUser.id, documentId },
+    });
+
+    res.status(200).json({ message: "Added collaborator" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to share document" });
+  }
+}
+
+export async function getDocumentCollaborators(req, res) {
+  try {
+    const documentId = req.params.id;
+
+    const collaborators = await prisma.collaborator.findMany({
+      where: { documentId },
+      select: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    res.status(200).json(collaborators);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to get collaborators" });
+  }
+}
+
+export async function deleteDocument(req, res) {
   const documentId = req.params.id;
-  const { email } = req.body;
 
-  const document = await prisma.document.findUnique({
-    where: { id: documentId },
-  });
+  try {
+    const document = await prisma.document.findUnique({
+      where: { id: documentId },
+    });
 
-  if (!document || document.ownerId !== req.user.id) {
-    return res
-      .status(403)
-      .json({ message: "You're not the owner of this document" });
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    if (document.ownerId !== req.user.id) {
+      res.status(403).json({ message: "Not authorized to delete this document" });
+      return;
+    }
+
+    await prisma.version.deleteMany({ where: { documentId } });
+    await prisma.collaborator.deleteMany({ where: { documentId } });
+
+    await prisma.document.delete({ where: { id: documentId } });
+
+    res.status(200).json({ message: "Document deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to delete document" });
   }
-
-  const targetUser = await prisma.user.findUnique({
-    where: { email },
-  });
-
-  if (!targetUser) {
-    return res.status(404).json({ message: "User not found" });
-  }
-
-  await prisma.collaborator.create({
-    data: {
-      userId: targetUser.id,
-      documentId,
-    },
-  });
-
-  res.status(200).json({ message: "Added collaborator" });
 }

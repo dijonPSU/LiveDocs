@@ -10,6 +10,8 @@ import {
   getDocumentContent,
   updateSnapshot,
   shareDocument,
+  getDocumentCollaborators,
+  deleteDocument,
 } from "./documents.js";
 
 const app = express();
@@ -70,10 +72,12 @@ app.use((req, res, next) => {
 
 app.get("/documents", getDocuments);
 app.get("/documents/:id/content", getDocumentContent);
+app.get("/documents/:id/collaborators", getDocumentCollaborators);
 app.post("/documents", createDocument);
 app.post("/documents/:id/patches", savePatch);
 app.post("/documents/:id/share", shareDocument);
 app.put("/documents/:id/snapshot", updateSnapshot);
+app.delete("/documents/:id", deleteDocument);
 
 app.get("/me", (req, res) => {
   res.json(req.user);

@@ -12,6 +12,7 @@ const HomepageBody = () => {
   const [isDocumentOptionsModalOpen, setIsDocumentOptionsModalOpen] =
     useState(false);
   const [modalPosition, setModalPosition] = useState(null);
+  const [documentId, setDocumentId] = useState(null);
   const [documents, setDocuments] = useState([]);
   const { user } = useUser();
 
@@ -38,13 +39,18 @@ const HomepageBody = () => {
     setIsDocumentOptionsModalOpen(false);
   };
 
-  const handleDocumentOptionsClick = (e) => {
+  const handleDeleteDocument = (deletedId) => {
+    setDocuments((prev) => prev.filter((doc) => doc.id !== deletedId));
+  };
+
+  const handleDocumentOptionsClick = (e, docID) => {
     e.stopPropagation();
     const buttonRect = e.currentTarget.getBoundingClientRect();
     setModalPosition({
       left: buttonRect.left,
       bottom: buttonRect.bottom,
     });
+    setDocumentId(docID);
     setIsDocumentOptionsModalOpen(true);
   };
 
@@ -75,7 +81,9 @@ const HomepageBody = () => {
               <DocumentCard
                 key={doc.id}
                 doc={doc}
-                onEditClick={handleDocumentOptionsClick}
+                onEditClick={(e) => {
+                  handleDocumentOptionsClick(e, doc.id);
+                }}
               />
             ))}
           </div>
@@ -88,6 +96,8 @@ const HomepageBody = () => {
         <DocumentOptionsModal
           closeModal={handleCloseDocumentOptionsModal}
           position={modalPosition}
+          documentId={documentId}
+          onDelete={handleDeleteDocument}
         />
       )}
     </div>
