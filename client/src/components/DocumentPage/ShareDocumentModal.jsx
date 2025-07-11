@@ -1,9 +1,27 @@
-import React, { useState } from "react";
-import { shareDocument } from "../../utils/dataFetcher";
+import React, { useState, useEffect } from "react";
+import { shareDocument, getCollaborators } from "../../utils/dataFetcher";
+import { useUser } from "../../hooks/useUser";
 import "./ShareDocumentModal.css";
 
 export default function ShareDocumentModal({ closeModal, documentId }) {
   const [email, setEmail] = useState("");
+  const [globalUserEmail, setGlobalUserEmail] = useState("");
+  const [collaborators, setCollaborators] = useState([]);
+  const { user } = useUser();
+
+  useEffect(() => {
+    async function fetchCollaborators() {
+      try {
+        const users = await getCollaborators(documentId);
+        setCollaborators(users);
+        setGlobalUserEmail(user.email);
+      } catch (err) {
+        console.error("Failed to load collaborators", err);
+      }
+    }
+
+    fetchCollaborators();
+  }, [documentId, user.email]);
 
   const handleShareDocument = async (documentId, email) => {
     try {
@@ -40,13 +58,30 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+
+          {/* Collaborators */}
+          <div className="collaborators-list">
+            <h4>Current Collaborators</h4>
+            {collaborators.length === 0 && <p>No collaborators yet</p>}
+            <ul>
+              {collaborators.map((user) => (
+                <li key={user.id} className="collaborator-item">
+                  <img
+                    src={user.image}
+                    alt={user.email}
+                    className="collaborator-avatar"
+                  />
+                  {user.email} {user.email === globalUserEmail && "(You)"}
+                </li>
+              ))}
+            </ul>
+          </div>
+
           <div className="document-buttons">
             <button
               type="button"
               className="btn btn-primary"
-              onClick={() => {
-                handleShareDocument(documentId, email);
-              }}
+              onClick={() => handleShareDocument(documentId, email)}
             >
               Share
             </button>
