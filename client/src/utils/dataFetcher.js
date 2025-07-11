@@ -10,8 +10,9 @@ const httpHeaders = {
 
 const baseURL = "http://localhost:3000";
 
-const getUserData = async () => {
-  const URL = `${baseURL}/me`;
+const getUserData = async (id = null) => {
+  const URL = id ? `${baseURL}/users/${id}` : `${baseURL}/me`;
+
   try {
     const response = await fetch(URL, {
       credentials: "include",
@@ -151,7 +152,7 @@ const deleteDocument = async (documentId) => {
 
   try {
     const response = await fetch(URL, {
-      method: httpMethod.DELETE,
+      method: "DELETE",
       credentials: "include",
     });
 
@@ -161,11 +162,40 @@ const deleteDocument = async (documentId) => {
 
     if (!response.ok) throw new Error("Failed to delete document");
 
-    return 1;
-  } catch {
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Cannot delete document", error.message);
     return null;
   }
 };
+
+const getCollaboratorsProfiles = async (clientIds) => {
+  if (!clientIds || clientIds.length === 0) {
+    return [];
+  }
+
+  const URL = `${baseURL}/users/profiles`;
+
+  try {
+    const response = await fetch(URL, {
+      method: httpMethod.POST,
+      credentials: "include",
+      headers: httpHeaders,
+
+      body: JSON.stringify({ userIds: clientIds }),
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch collaborator profiles");
+
+    const profiles = await response.json();
+    return profiles;
+  } catch (error) {
+    console.error("Cannot get collaborator profiles", error.message);
+    return [];
+  }
+};
+
 export {
   getUserData,
   getUserDocuments,
@@ -175,4 +205,5 @@ export {
   shareDocument,
   getCollaborators,
   deleteDocument,
+  getCollaboratorsProfiles,
 };
