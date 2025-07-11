@@ -160,12 +160,39 @@ export async function getDocumentCollaborators(req, res) {
       },
     });
 
-    // convert to array
-    const users = collaborators.map((c) => c.user);
-
-    res.status(200).json(users);
+    res.status(200).json(collaborators);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to get collaborators" });
+  }
+}
+
+export async function deleteDocument(req, res) {
+  const documentId = req.params.id;
+
+  try {
+    const document = await prisma.document.findUnique({
+      where: { id: documentId },
+    });
+
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    if (document.ownerId !== req.user.id) {
+      res
+        .status(403)
+        .json({ message: "Not authorized to delete this document" });
+    }
+
+    await prisma.version.deleteMany({ where: { documentId } });
+    await prisma.collaborator.deleteMany({ where: { documentId } });
+
+    await prisma.document.delete({ where: { id: documentId } });
+
+    res.status(200).json({ message: "Document deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to delete document" });
   }
 }

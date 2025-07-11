@@ -11,6 +11,7 @@ import {
   updateSnapshot,
   shareDocument,
   getDocumentCollaborators,
+  deleteDocument,
 } from "./documents.js";
 
 const app = express();
@@ -76,6 +77,7 @@ app.post("/documents", createDocument);
 app.post("/documents/:id/patches", savePatch);
 app.post("/documents/:id/share", shareDocument);
 app.put("/documents/:id/snapshot", updateSnapshot);
+app.delete("/documents/:id", deleteDocument);
 
 app.get("/me", (req, res) => {
   res.json(req.user);

@@ -140,6 +140,28 @@ const getCollaborators = async (documentId) => {
   }
 };
 
+const deleteDocument = async (documentId) => {
+  const URL = `http://localhost:3000/documents/${documentId}`;
+
+  try {
+    const response = await fetch(URL, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (response.status === 403) {
+      throw new Error("You are not the owner");
+    }
+
+    if (!response.ok) throw new Error("Failed to delete document");
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Cannot delete document", error.message);
+    return null;
+  }
+};
 export {
   getUserData,
   getUserDocuments,
@@ -148,4 +170,5 @@ export {
   savePatch,
   shareDocument,
   getCollaborators,
+  deleteDocument,
 };
