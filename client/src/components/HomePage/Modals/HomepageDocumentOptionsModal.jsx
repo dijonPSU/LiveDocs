@@ -1,15 +1,16 @@
 import React, { useEffect, useRef } from "react";
+import { deleteDocument } from "../../../utils/dataFetcher";
 
-export default function DocumentOptionsModal({ closeModal, position }) {
+export default function DocumentOptionsModal({closeModal, position, documentId, onDelete }) {
   const modalRef = useRef(null);
 
   useEffect(() => {
     // closes modal when clicked outside of modal
-    function handleClickOutside(event) {
+    const handleClickOutside = (event) => {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
         closeModal();
       }
-    }
+    };
 
     document.addEventListener("mousedown", handleClickOutside);
 
@@ -17,6 +18,21 @@ export default function DocumentOptionsModal({ closeModal, position }) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [closeModal]);
+
+  const handleDelete = async () => {
+    try {
+      const data = await deleteDocument(documentId);
+      if(data == null){
+        console.error("Failed to delete document");
+        closeModal();
+        return;
+      }
+      onDelete(documentId);
+      closeModal();
+    } catch (error) {
+      console.error("Failed to delete document:", error);
+    }
+  };
 
   // calculate position styles
   const positionStyle = position
@@ -36,7 +52,7 @@ export default function DocumentOptionsModal({ closeModal, position }) {
     >
       <div className="edit-options-modal-content">
         <button>Rename</button>
-        <button>Remove</button>
+        <button onClick={() => handleDelete()}>Remove</button>
         <button>Open In New Tab</button>
       </div>
     </div>

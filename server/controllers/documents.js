@@ -180,9 +180,8 @@ export async function deleteDocument(req, res) {
     }
 
     if (document.ownerId !== req.user.id) {
-      res
-        .status(403)
-        .json({ message: "Not authorized to delete this document" });
+      res.status(403).json({ message: "Not authorized to delete this document" });
+      return;
     }
 
     await prisma.version.deleteMany({ where: { documentId } });

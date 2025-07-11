@@ -64,16 +64,19 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
             <h4>Current Collaborators</h4>
             {collaborators.length === 0 && <p>No collaborators yet</p>}
             <ul>
-              {collaborators.map((user) => (
-                <li key={user.id} className="collaborator-item">
-                  <img
-                    src={user.image}
-                    alt={user.email}
-                    className="collaborator-avatar"
-                  />
-                  {user.email} {user.email === globalUserEmail && "(You)"}
-                </li>
-              ))}
+              {collaborators.map((data) => {
+                return (
+                  <li key={data.user.id} className="collaborator-item">
+                    <img
+                      src={data.user.image}
+                      alt={data.user.email}
+                      className="collaborator-avatar"
+                    />
+                    {data.user.email}{" "}
+                    {data.user.email === globalUserEmail && "(You)"}
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
