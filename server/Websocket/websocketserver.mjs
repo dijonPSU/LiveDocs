@@ -15,6 +15,14 @@ const PAYLOAD_LENGTH_16BIT = 126;
 const MAX_PAYLOAD_LENGTH_16BIT = 65535;
 const PAYLOAD_LENGTH_64BIT = 127;
 
+const messageActionEnum = {
+  JOIN: "join",
+  LEAVE: "leave",
+  SEND: "send",
+  CLIENTLIST: "clientList",
+  IDENTIFY: "identify",
+};
+
 // -- server --
 const server = createServer((req, res) => {
   res.writeHead(200);
@@ -75,6 +83,8 @@ function onSocketUpgrade(req, socket) {
       socket.rooms.forEach((roomName) => {
         leaveRoom(socket, roomName);
       });
+      socket.rooms.clear();
+      socket.rooms = null;
     }
   });
 }
@@ -173,31 +183,35 @@ function handleFrame(socket, opcode, data) {
 
       try {
         const jsonData = JSON.parse(message);
-        const { action, roomName, message: msg } = jsonData;
+        const { action, userId, roomName, message: msg } = jsonData;
 
         switch (action) {
-          case "join":
+          case messageActionEnum.IDENTIFY:
+            if (userId) {
+              socket.id = userId;
+            }
+            break;
+          case messageActionEnum.JOIN:
             joinRoom(socket, roomName);
             break;
-          case "leave":
+          case messageActionEnum.LEAVE:
             leaveRoom(socket, roomName);
             break;
-          case "send":
-            // for now
+          case messageActionEnum.SEND:
             if (roomName) {
               sendToRoom(
                 socket,
                 roomName,
                 JSON.stringify({
-                  action: "send",
-                  from: "room",
+                  action: messageActionEnum.SEND,
+                  from: socket.id,
                   roomName,
                   message: msg,
                 }),
+                false,
               );
             } else {
-              console.log("No rooms found, sending to all clients");
-              sendFrame(socket, OPCODE_TEXT, Buffer.from(message));
+              console.log("No room specified");
             }
             break;
           default:
@@ -245,7 +259,6 @@ function sendFrame(socket, opcode, payload) {
 
   const frame = Buffer.concat([header, payload]);
   socket.write(frame);
-  console.log("Sent message:", payload.toString());
 }
 
 function joinRoom(client, roomName) {
@@ -258,9 +271,19 @@ function joinRoom(client, roomName) {
   rooms.get(roomName).add(client);
 
   if (!client.rooms) {
-    // give client a rooms property if it doesn't have one so we can use it to keep track of rooms
     client.rooms = new Set();
   }
+
+  const clientsInRoom = Array.from(rooms.get(roomName)).map((c) => c.id);
+
+  const clientListMessage = {
+    action: messageActionEnum.CLIENTLIST,
+    roomName,
+    clients: clientsInRoom,
+  };
+
+  sendToRoom(client, roomName, JSON.stringify(clientListMessage), true);
+
   client.rooms.add(roomName);
   console.log(`Socket ${client.id} joined room ${roomName}`);
 }
@@ -270,6 +293,14 @@ function leaveRoom(client, roomName) {
     rooms.get(roomName).delete(client);
     if (rooms.get(roomName).size === 0) {
       rooms.delete(roomName);
+    } else {
+      const updatedClients = Array.from(rooms.get(roomName)).map((c) => c.id);
+      const clientListMessage = {
+        action: messageActionEnum.CLIENTLIST,
+        roomName,
+        clients: updatedClients,
+      };
+      sendToRoom(client, roomName, JSON.stringify(clientListMessage), true);
     }
   }
 
@@ -278,14 +309,13 @@ function leaveRoom(client, roomName) {
   }
 }
 
-function sendToRoom(roomClient, roomName, message) {
+function sendToRoom(roomClient, roomName, message, includeSender = false) {
   if (rooms.has(roomName)) {
     console.log(`Sending message to room ${roomName}: ${message}`);
 
     const roomToBroadcast = rooms.get(roomName);
     roomToBroadcast.forEach((client) => {
-      // send to everyone except the sender
-      if (roomClient !== client) {
+      if (includeSender || client !== roomClient) {
         sendFrame(client, OPCODE_TEXT, Buffer.from(message));
       }
     });
