@@ -155,10 +155,8 @@ const deleteDocument = async (documentId) => {
 
     if (!response.ok) throw new Error("Failed to delete document");
 
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error("Cannot delete document", error.message);
+    return 1;
+  } catch {
     return null;
   }
 };

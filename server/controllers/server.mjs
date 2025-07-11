@@ -62,7 +62,6 @@ app.post("/auth/logout", (req, res) => {
 });
 
 // Authenicated routes
-
 app.use((req, res, next) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Not authenticated" });

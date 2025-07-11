@@ -35,6 +35,7 @@ export async function createDocument(req, res) {
 
 export async function savePatch(req, res) {
   const { documentId, userId, delta } = req.body;
+
   try {
     const count = await prisma.version.count({
       where: { documentId },
@@ -180,8 +181,9 @@ export async function deleteDocument(req, res) {
     }
 
     if (document.ownerId !== req.user.id) {
-      res.status(403).json({ message: "Not authorized to delete this document" });
-      return;
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this document" });
     }
 
     await prisma.version.deleteMany({ where: { documentId } });
