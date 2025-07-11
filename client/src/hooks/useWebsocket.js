@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 
-export default function useWebSocket(onMessage) {
+export default function useWebSocket(onMessage, user) {
   const url = "ws://localhost:8080";
   const [connected, setConnected] = useState(false);
   const socketRef = useRef(null);
+  const messageHandlerRef = useRef(onMessage);
+
+  useEffect(() => {
+    messageHandlerRef.current = onMessage;
+  }, [onMessage]);
 
   useEffect(() => {
     const ws = new WebSocket(url);
@@ -12,6 +17,10 @@ export default function useWebSocket(onMessage) {
     ws.onopen = () => {
       setConnected(true);
       console.log("WebSocket connected");
+
+      if (user?.id) {
+        ws.send(JSON.stringify({ action: "identify", userId: user.id }));
+      }
     };
 
     ws.onclose = () => {
@@ -24,10 +33,10 @@ export default function useWebSocket(onMessage) {
     };
 
     ws.onmessage = (event) => {
-      if (onMessage) {
+      if (messageHandlerRef.current) {
         try {
           const data = JSON.parse(event.data);
-          onMessage(data);
+          messageHandlerRef.current(data);
         } catch (err) {
           console.error("Failed to parse WebSocket message", err);
         }
@@ -37,7 +46,7 @@ export default function useWebSocket(onMessage) {
     return () => {
       ws.close();
     };
-  }, [url, onMessage]);
+  }, [user?.id]);
 
   const sendMessage = (messageObject) => {
     const ws = socketRef.current;
