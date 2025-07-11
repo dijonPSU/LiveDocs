@@ -1,5 +1,17 @@
+const httpMethod = {
+  GET: "GET",
+  POST: "POST",
+  DELETE: "DELETE",
+};
+
+const httpHeaders = {
+  "Content-Type": "application/json",
+};
+
+const baseURL = "http://localhost:3000";
+
 const getUserData = async () => {
-  const URL = "http://localhost:3000/me";
+  const URL = `${baseURL}/me`;
   try {
     const response = await fetch(URL, {
       credentials: "include",
@@ -15,7 +27,7 @@ const getUserData = async () => {
 };
 
 const getUserDocuments = async () => {
-  const URL = "http://localhost:3000/documents";
+  const URL = `${baseURL}/documents`;
 
   try {
     const response = await fetch(URL, {
@@ -32,18 +44,16 @@ const getUserDocuments = async () => {
 };
 
 const createDocument = async (title) => {
-  const URL = "http://localhost:3000/documents";
+  const URL = `${baseURL}/documents`;
   const data = {
     title: title,
   };
 
   try {
     const response = await fetch(URL, {
-      method: "POST",
+      method: httpMethod.POST,
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: httpHeaders,
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error("Failed to create document");
@@ -57,7 +67,7 @@ const createDocument = async (title) => {
 };
 
 const getDocumentContent = async (documentId) => {
-  const URL = `http://localhost:3000/documents/${documentId}/content`;
+  const URL = `${baseURL}/documents/${documentId}/content`;
 
   try {
     const response = await fetch(URL, {
@@ -74,7 +84,7 @@ const getDocumentContent = async (documentId) => {
 };
 
 const savePatch = async (documentId, delta, userId) => {
-  const URL = `http://localhost:3000/documents/${documentId}/patches`;
+  const URL = `${baseURL}/documents/${documentId}/patches`;
 
   const body = {
     documentId: documentId,
@@ -84,11 +94,9 @@ const savePatch = async (documentId, delta, userId) => {
 
   try {
     const response = await fetch(URL, {
-      method: "POST",
+      method: httpMethod.POST,
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: httpHeaders,
       body: JSON.stringify(body),
     });
     if (!response.ok) throw new Error("Failed to save patch");
@@ -99,7 +107,7 @@ const savePatch = async (documentId, delta, userId) => {
 };
 
 const shareDocument = async (documentId, email) => {
-  const URL = `http://localhost:3000/documents/${documentId}/share`;
+  const URL = `${baseURL}/documents/${documentId}/share`;
 
   const body = {
     documentId: documentId,
@@ -108,11 +116,9 @@ const shareDocument = async (documentId, email) => {
 
   try {
     const response = await fetch(URL, {
-      method: "POST",
+      method: httpMethod.POST,
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: httpHeaders,
       body: JSON.stringify(body),
     });
     if (!response.ok) throw new Error("Failed to share document");
@@ -124,7 +130,7 @@ const shareDocument = async (documentId, email) => {
 };
 
 const getCollaborators = async (documentId) => {
-  const URL = `http://localhost:3000/documents/${documentId}/collaborators`;
+  const URL = `${baseURL}/documents/${documentId}/collaborators`;
 
   try {
     const response = await fetch(URL, {
@@ -141,11 +147,11 @@ const getCollaborators = async (documentId) => {
 };
 
 const deleteDocument = async (documentId) => {
-  const URL = `http://localhost:3000/documents/${documentId}`;
+  const URL = `${baseURL}/documents/${documentId}`;
 
   try {
     const response = await fetch(URL, {
-      method: "DELETE",
+      method: httpMethod.DELETE,
       credentials: "include",
     });
 
