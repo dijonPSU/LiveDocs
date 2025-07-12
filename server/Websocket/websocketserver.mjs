@@ -49,9 +49,6 @@ function onSocketUpgrade(req, socket) {
     return;
   }
 
-  // assign random ID for now (testing)
-  socket.id = crypto.randomUUID();
-
   // respond to handshake
   const acceptKey = createAcceptKey(clientKey);
   const responseHeaders = [
@@ -62,7 +59,6 @@ function onSocketUpgrade(req, socket) {
     "\r\n",
   ].join("\r\n");
   socket.write(responseHeaders);
-  console.log(`Client connected: ${socket.id}`);
 
   // buffer incoming data here
   socket._buffer = Buffer.alloc(0);
@@ -311,8 +307,6 @@ function leaveRoom(client, roomName) {
 
 function sendToRoom(roomClient, roomName, message, includeSender = false) {
   if (rooms.has(roomName)) {
-    console.log(`Sending message to room ${roomName}: ${message}`);
-
     const roomToBroadcast = rooms.get(roomName);
     roomToBroadcast.forEach((client) => {
       if (includeSender || client !== roomClient) {

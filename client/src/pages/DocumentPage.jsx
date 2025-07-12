@@ -1,12 +1,23 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import Quill from "quill";
 import { useUser } from "../hooks/useUser";
 import { useLocation, useNavigate } from "react-router-dom";
+import Quill from "quill";
 import useWebSocket from "../hooks/useWebsocket";
 import ShareDocumentModal from "../components/DocumentPage/ShareDocumentModal";
 import "quill/dist/quill.snow.css";
 import "../pages/styles/DocumentPage.css";
-import { getDocumentContent, savePatch } from "../utils/dataFetcher";
+import {
+  getDocumentContent,
+  getCollaboratorsProfiles,
+  savePatch,
+} from "../utils/dataFetcher";
+
+const dataActionEum = {
+  JOIN: "join",
+  LEAVE: "leave",
+  SEND: "send",
+  CLIENTLIST: "clientList",
+};
 
 export default function DocumentPage() {
   const location = useLocation();
@@ -15,6 +26,8 @@ export default function DocumentPage() {
   const { state } = location;
   const { documentName = "Untitled Document", documentId } = state || {};
   const { user, loading } = useUser();
+  const [collaborators, setCollaborators] = useState([]);
+  const [collaboratorProfiles, setCollaboratorProfiles] = useState([]);
 
   const [documentTitle, setDocumentTitle] = useState(documentName);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -22,27 +35,49 @@ export default function DocumentPage() {
   const quillRef = useRef(null);
 
   // added callback for WebSocket messages to avoid effect re-run
-  const handleSocketMessage = useCallback((data) => {
-    if (data.action === "send" && quillRef.current) {
-      quillRef.current.updateContents(data.message);
-      console.log("Patch applied:", data.message);
-    }
-  }, []);
+  const handleSocketMessage = useCallback(
+    (data) => {
+      switch (data.action) {
+        case dataActionEum.SEND:
+          if (quillRef.current) {
+            quillRef.current.updateContents(data.message);
+          }
+          break;
 
-  const { sendMessage, connected } = useWebSocket(handleSocketMessage);
+        case dataActionEum.CLIENTLIST:
+          console.log("Raw WebSocket clients:", data.clients);
+          setCollaborators(data.clients);
+          getCollaboratorsProfiles(data.clients).then((profiles) =>
+            setCollaboratorProfiles(
+              profiles.filter((profile) => profile.id !== user.id),
+            ),
+          );
+
+          break;
+        default:
+          break;
+      }
+    },
+    [user?.id],
+  );
+
+  useEffect(() => {}, [collaboratorProfiles]);
+
+  const { sendMessage, connected } = useWebSocket(handleSocketMessage, user);
 
   // join room on connect (MIGHT CHANGE IT SO CLIENT ONLY JOIN ROOM IF DOCUMENT IS SHARED WITH OTHERS)
   useEffect(() => {
     if (!connected || !documentId) return;
 
-    sendMessage({ action: "join", roomName: documentId });
+    sendMessage({ action: dataActionEum.JOIN, roomName: documentId });
     console.log("Joined room:", documentId);
 
     return () => {
-      sendMessage({ action: "leave", roomName: documentId });
+      sendMessage({ action: dataActionEum.LEAVE, roomName: documentId });
       console.log("Left room:", documentId);
     };
-  }, [connected, documentId, sendMessage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected, documentId]);
 
   //  quill editor { For now until we have a custom text editor }
   useEffect(() => {
@@ -63,8 +98,22 @@ export default function DocumentPage() {
         },
       };
       quillRef.current = new Quill(editorRef.current, quillOptions);
+
+      quillRef.current.on("text-change", async (delta, _oldDelta, source) => {
+        if (source !== "user" || !documentId || !user?.id) return;
+        try {
+          sendMessage({
+            action: dataActionEum.SEND,
+            roomName: documentId,
+            message: delta,
+          });
+          await savePatch(documentId, delta.ops, user.id);
+        } catch (error) {
+          console.error("Failed to save patch:", error);
+        }
+      });
     }
-  }, []);
+  }, [connected, documentId, sendMessage, user?.id]);
 
   // get document content
   useEffect(() => {
@@ -82,33 +131,6 @@ export default function DocumentPage() {
     };
     loadContent();
   }, [documentId]);
-
-  // send user changes through webSocket and save patches
-  useEffect(() => {
-    if (!connected || !quillRef.current) return;
-
-    const handleTextChange = async (delta, oldDelta, source) => {
-      if (source !== "user") return;
-      console.log("Sending changes to server:", delta);
-
-      sendMessage({
-        action: "send",
-        message: delta,
-        roomName: documentId,
-      });
-
-      try {
-        await savePatch(documentId, delta, user?.id);
-      } catch (error) {
-        console.error("Error saving patch:", error);
-      }
-    };
-
-    quillRef.current.on("text-change", handleTextChange);
-    return () => {
-      quillRef.current.off("text-change", handleTextChange);
-    };
-  }, [connected, documentId, sendMessage, user?.id]);
 
   const handleTitleChange = (e) => setDocumentTitle(e.target.value);
 
@@ -151,6 +173,22 @@ export default function DocumentPage() {
               "No Avatar"
             )}
           </div>
+          {collaborators.length > 0 && (
+            <div className="collaborators">
+              {collaboratorProfiles.map((profile) => (
+                <div key={profile.id} className="collaborator">
+                  {profile.image ? (
+                    <img
+                      src={profile.image}
+                      alt={profile.email || "Collaborator"}
+                    />
+                  ) : (
+                    <div className="no-avatar">N/A</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

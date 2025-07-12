@@ -34,7 +34,8 @@ export async function createDocument(req, res) {
 }
 
 export async function savePatch(req, res) {
-  const { documentId, userId, delta } = req.body;
+  const { userId, delta } = req.body;
+  const documentId = req.params.id;
 
   try {
     const count = await prisma.version.count({
@@ -50,8 +51,6 @@ export async function savePatch(req, res) {
         isSnapshot: false,
       },
     });
-
-    // TODO: CALL snapshot every 10 patches
 
     res.status(201).json(version);
   } catch (err) {

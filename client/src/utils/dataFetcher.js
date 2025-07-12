@@ -182,7 +182,6 @@ const getCollaboratorsProfiles = async (clientIds) => {
       method: httpMethod.POST,
       credentials: "include",
       headers: httpHeaders,
-
       body: JSON.stringify({ userIds: clientIds }),
     });
 
