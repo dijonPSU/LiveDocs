@@ -34,7 +34,9 @@ export async function createDocument(req, res) {
 }
 
 export async function savePatch(req, res) {
-  const { documentId, userId, delta } = req.body;
+  const { userId, delta } = req.body;
+  const documentId = req.params.id;
+
   try {
     const count = await prisma.version.count({
       where: { documentId },
@@ -49,8 +51,6 @@ export async function savePatch(req, res) {
         isSnapshot: false,
       },
     });
-
-    // TODO: CALL snapshot every 10 patches
 
     res.status(201).json(version);
   } catch (err) {
@@ -167,6 +167,56 @@ export async function getDocumentCollaborators(req, res) {
   }
 }
 
+export async function getUserData(req, res) {
+  try {
+    const userId = req.params.id;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        image: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to get user data" });
+  }
+}
+
+export async function getUserProfiles(req, res) {
+  try {
+    const { userIds } = req.body;
+
+    if (!userIds || !Array.isArray(userIds)) {
+      return res.status(400).json({ message: "userIds array is required" });
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        id: { in: userIds },
+      },
+      select: {
+        id: true,
+        email: true,
+        image: true,
+      },
+    });
+
+    res.status(200).json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to get user profiles" });
+  }
+}
+
 export async function deleteDocument(req, res) {
   const documentId = req.params.id;
 
@@ -180,8 +230,9 @@ export async function deleteDocument(req, res) {
     }
 
     if (document.ownerId !== req.user.id) {
-      res.status(403).json({ message: "Not authorized to delete this document" });
-      return;
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this document" });
     }
 
     await prisma.version.deleteMany({ where: { documentId } });

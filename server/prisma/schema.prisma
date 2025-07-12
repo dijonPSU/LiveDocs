@@ -70,15 +70,3 @@ model Collaborator {
   @@unique([userId, documentId])
 }
 
-model ActiveCollaborator {
-  id                String               @id @default(cuid())
-  userId            String
-  documentId        String
-  connectedAt       DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
-
-  user              User                 @relation(fields: [userId], references: [id])
-  document          Document             @relation(fields: [documentId], references: [id])
-
-  @@unique([userId, documentId])
-}

@@ -12,6 +12,8 @@ import {
   shareDocument,
   getDocumentCollaborators,
   deleteDocument,
+  getUserData,
+  getUserProfiles,
 } from "./documents.js";
 
 const app = express();
@@ -62,7 +64,6 @@ app.post("/auth/logout", (req, res) => {
 });
 
 // Authenicated routes
-
 app.use((req, res, next) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Not authenticated" });
@@ -73,9 +74,11 @@ app.use((req, res, next) => {
 app.get("/documents", getDocuments);
 app.get("/documents/:id/content", getDocumentContent);
 app.get("/documents/:id/collaborators", getDocumentCollaborators);
+app.get("/users/:id", getUserData);
 app.post("/documents", createDocument);
 app.post("/documents/:id/patches", savePatch);
 app.post("/documents/:id/share", shareDocument);
+app.post("/users/profiles", getUserProfiles);
 app.put("/documents/:id/snapshot", updateSnapshot);
 app.delete("/documents/:id", deleteDocument);
 
