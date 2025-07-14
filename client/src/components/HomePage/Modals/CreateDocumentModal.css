@@ -109,12 +109,12 @@
 }
 
 .btn-primary {
-  background-color: #4285f4;
+  background-color: #4b52d9;
   color: white;
 }
 
 .btn-primary:hover {
-  background-color: #3367d6;
+  background-color: #4b52d9;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
