@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
 import { deleteDocument } from "../../../utils/dataFetcher";
 
 export default function DocumentOptionsModal({

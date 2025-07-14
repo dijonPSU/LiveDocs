@@ -176,14 +176,22 @@ export default function DocumentPage() {
           {collaborators.length > 0 && (
             <div className="collaborators">
               {collaboratorProfiles.map((profile) => (
-                <div key={profile.id} className="collaborator">
+                <div
+                  key={profile.id}
+                  className="collaborator"
+                  data-email={profile.email || "Unknown User"}
+                >
                   {profile.image ? (
                     <img
                       src={profile.image}
                       alt={profile.email || "Collaborator"}
                     />
                   ) : (
-                    <div className="no-avatar">N/A</div>
+                    <div className="no-avatar">
+                      {profile.email
+                        ? profile.email.charAt(0).toUpperCase()
+                        : "?"}
+                    </div>
                   )}
                 </div>
               ))}
