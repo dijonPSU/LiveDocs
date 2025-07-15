@@ -62,7 +62,6 @@ export default function DocumentOptionsModal({
       style={positionStyle}
     >
       <div className="edit-options-modal-content">
-        <button>Rename</button>
         <button onClick={handleDelete}>
           {deleteError
             ? "Cannot Delete"

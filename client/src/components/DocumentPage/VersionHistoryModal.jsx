@@ -62,7 +62,6 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
 
         await savePatch(documentID, null, user.id, quillRef);
 
-
         try {
           sendMessage({
             action: dataActionEum.SEND,
@@ -144,7 +143,7 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
                       className="revert-button"
                       onClick={() => handleRevert(version.versionNumber)}
                     >
-                      Revert
+                      Load
                     </button>
                   </div>
                 </div>
