@@ -2,6 +2,7 @@ const httpMethod = {
   GET: "GET",
   POST: "POST",
   DELETE: "DELETE",
+  PATCH: "PATCH",
 };
 
 const httpHeaders = {
@@ -101,13 +102,14 @@ const savePatch = async (documentId, delta, userId, quillRef) => {
       body: JSON.stringify(body),
     });
     if (!response.ok) throw new Error("Failed to save patch");
+
+    const result = await response.json();
+    return result;
   } catch (error) {
     console.error("Cannot save patch", error.message);
     return null;
   }
 };
-
-
 
 const shareDocument = async (documentId, email) => {
   const URL = `${baseURL}/documents/${documentId}/share`;
@@ -154,7 +156,7 @@ const deleteDocument = async (documentId) => {
 
   try {
     const response = await fetch(URL, {
-      method: "DELETE",
+      method: httpMethod.DELETE,
       credentials: "include",
     });
 
@@ -231,6 +233,25 @@ const revertToVersion = async (documentId, versionNumber, userId) => {
   }
 };
 
+const updateDocumentTitle = async (documentId, title) => {
+  const URL = `${baseURL}/documents/${documentId}`;
+  const body = { title };
+
+  try {
+    const response = await fetch(URL, {
+      method: httpMethod.PATCH,
+      credentials: "include",
+      headers: httpHeaders,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error("Failed to update document title");
+    return await response.json();
+  } catch (error) {
+    console.error("Cannot update document title", error.message);
+    throw error;
+  }
+};
+
 export {
   getUserData,
   getUserDocuments,
@@ -243,4 +264,5 @@ export {
   getCollaboratorsProfiles,
   getVersions,
   revertToVersion,
+  updateDocumentTitle,
 };

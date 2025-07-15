@@ -1,33 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-/*
-
-WILL CHANGE THIS TO A LOADING PAGE WITH A LOADING BAR, THEN AUTO REDIRECT TO HOMEPAGE
-
-
-*/
+import "./styles/CallbackPage.css";
 
 function CallbackPage() {
   const navigate = useNavigate();
-  const [token, setToken] = useState(null);
   const [error, setError] = useState(null);
-
   useEffect(() => {
-    // get access token from URL
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
+    const params = new URLSearchParams(window.location.search);
 
-    if (params.has("access_token")) {
-      const accessToken = params.get("access_token");
-      setToken(accessToken);
-
-      // store token in local storage for now
-      localStorage.setItem("googleAccessToken", accessToken);
+    if (params.get("success") === "true") {
+      setTimeout(() => navigate("/Homepage"), 2200);
     } else if (params.has("error")) {
       setError(params.get("error"));
     }
-  }, []);
+  }, [navigate]);
 
   if (error) {
     return (
@@ -39,20 +25,13 @@ function CallbackPage() {
     );
   }
 
-  if (token) {
-    return (
-      <div className="callback-page">
-        <h1>Authentication Successful</h1>
-        <p>You have successfully authenticated with Google.</p>
-        <button onClick={() => navigate("/Homepage")}>Continue to App</button>
-      </div>
-    );
-  }
-
   return (
     <div className="callback-page">
-      <h1>Processing Authentication...</h1>
-      <p>Please wait while we authenicate.</p>
+      <div className="loading-box">
+        <h2>Authenticating...</h2>
+        <div className="spinner" />
+        <p>Redirecting to your documents...</p>
+      </div>
     </div>
   );
 }

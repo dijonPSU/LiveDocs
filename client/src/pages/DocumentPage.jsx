@@ -11,6 +11,7 @@ import {
   getDocumentContent,
   getCollaboratorsProfiles,
   savePatch,
+  updateDocumentTitle,
 } from "../utils/dataFetcher";
 
 const dataActionEum = {
@@ -46,7 +47,12 @@ export default function DocumentPage() {
       switch (data.action) {
         case dataActionEum.SEND:
           if (quillRef.current) {
-            quillRef.current.updateContents(data.message);
+            console.log(data);
+            if (data.reset) {
+              quillRef.current.setContents(data.message);
+            } else {
+              quillRef.current.updateContents(data.message);
+            }
           }
           break;
 
@@ -138,7 +144,12 @@ export default function DocumentPage() {
 
         saveTimerRef.current = setTimeout(async () => {
           try {
-            await savePatch(documentId, composedDeltaRef.current.ops, user.id, quillRef);
+            await savePatch(
+              documentId,
+              composedDeltaRef.current.ops,
+              user.id,
+              quillRef,
+            );
             composedDeltaRef.current = null;
             setSaveStatus("All changes saved");
           } catch (error) {
@@ -167,7 +178,16 @@ export default function DocumentPage() {
     loadContent();
   }, [documentId]);
 
-  const handleTitleChange = (e) => setDocumentTitle(e.target.value);
+  const handleTitleChange = async (e) => {
+    if (e.key === "Enter") {
+      try {
+        await updateDocumentTitle(documentId, documentTitle);
+        e.target.blur();
+      } catch {
+        console.log("Failed to update document title");
+      }
+    }
+  };
 
   const closeShareModal = () => setShowShareModal(false);
 
@@ -202,7 +222,8 @@ export default function DocumentPage() {
               type="text"
               className="document-title-input"
               value={documentTitle}
-              onChange={handleTitleChange}
+              onChange={(e) => setDocumentTitle(e.target.value)}
+              onKeyDown={handleTitleChange}
               placeholder="Untitled document"
               id="title-input"
             />

@@ -3,7 +3,7 @@ import {
   getVersions,
   revertToVersion,
   savePatch,
-} from "../../utils/dataFetcher"; // We'll add these
+} from "../../utils/dataFetcher";
 import { useUser } from "../../hooks/useUser";
 import useWebSocket from "../../hooks/useWebsocket";
 import "./VersionHistoryModal.css";
@@ -58,20 +58,21 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
       console.log("Revert response", response);
 
       if (response && response.updatedContent) {
-        // Clear editor before applying revert patch
-        quillRef.current.setContents([response.updatedContent]);
+        quillRef.current.setContents([]);
 
-        // Save the patch with the reverted content from empty state
-        quillRef.current.setContents(response.updatedContent);
+        await savePatch(documentID, null, user.id, quillRef);
 
-        sendMessage({
-          action: dataActionEum.SEND,
-          roomName: documentID,
-          message: response.updatedContent,
-        });
-        console.log("Broadcasted revert message");
+        try {
+          sendMessage({
+            action: dataActionEum.SEND,
+            roomName: documentID,
+            message: response.updatedContent,
+            reset: true,
+          });
+        } catch (error) {
+          console.error("Failed to broadcast revert via WebSocket:", error);
+        }
 
-        // Close modal
         onClose();
       }
     } catch (err) {
@@ -142,7 +143,7 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
                       className="revert-button"
                       onClick={() => handleRevert(version.versionNumber)}
                     >
-                      Revert
+                      Load
                     </button>
                   </div>
                 </div>
