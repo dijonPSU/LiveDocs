@@ -2,6 +2,7 @@ const httpMethod = {
   GET: "GET",
   POST: "POST",
   DELETE: "DELETE",
+  PATCH: "PATCH",
 };
 
 const httpHeaders = {
@@ -232,6 +233,25 @@ const revertToVersion = async (documentId, versionNumber, userId) => {
   }
 };
 
+const updateDocumentTitle = async (documentId, title) => {
+  const URL = `${baseURL}/documents/${documentId}`;
+  const body = { title };
+
+  try {
+    const response = await fetch(URL, {
+      method: httpMethod.PATCH,
+      credentials: "include",
+      headers: httpHeaders,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error("Failed to update document title");
+    return await response.json();
+  } catch (error) {
+    console.error("Cannot update document title", error.message);
+    throw error;
+  }
+};
+
 export {
   getUserData,
   getUserDocuments,
@@ -244,4 +264,5 @@ export {
   getCollaboratorsProfiles,
   getVersions,
   revertToVersion,
+  updateDocumentTitle,
 };

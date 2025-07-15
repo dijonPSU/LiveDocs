@@ -179,7 +179,13 @@ function handleFrame(socket, opcode, data) {
 
       try {
         const jsonData = JSON.parse(message);
-        const { action, userId, roomName, message: msg, reset = false } = jsonData;
+        const {
+          action,
+          userId,
+          roomName,
+          message: msg,
+          reset = false,
+        } = jsonData;
 
         switch (action) {
           case messageActionEnum.IDENTIFY:

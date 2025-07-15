@@ -347,3 +347,20 @@ export async function revertVersion(req, res) {
     res.status(500).json({ message: "Failed to revert version" });
   }
 }
+
+export async function updateDocumentTitle(req, res) {
+  const documentId = req.params.id;
+  const { title } = req.body;
+
+  try {
+    await prisma.document.update({
+      where: { id: documentId },
+      data: { title },
+    });
+
+    res.status(200).json({ message: "Document title updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to update document title" });
+  }
+}

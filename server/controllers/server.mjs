@@ -16,6 +16,7 @@ import {
   getUserProfiles,
   getVersions,
   revertVersion,
+  updateDocumentTitle,
 } from "./documents.js";
 
 const app = express();
@@ -84,6 +85,7 @@ app.post("/documents/:id/share", shareDocument);
 app.post("/users/profiles", getUserProfiles);
 app.post("/documents/:id/revert", revertVersion);
 app.put("/documents/:id/snapshot", updateSnapshot);
+app.patch("/documents/:id", updateDocumentTitle);
 app.delete("/documents/:id", deleteDocument);
 
 app.get("/me", (req, res) => {
