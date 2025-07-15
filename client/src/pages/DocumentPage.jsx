@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Quill from "quill";
 import useWebSocket from "../hooks/useWebsocket";
 import ShareDocumentModal from "../components/DocumentPage/ShareDocumentModal";
+import VersionHistoryModal from "../components/DocumentPage/VersionHistoryModal";
 import "quill/dist/quill.snow.css";
 import "../pages/styles/DocumentPage.css";
 import {
@@ -19,6 +20,7 @@ const dataActionEum = {
   CLIENTLIST: "clientList",
 };
 
+// TODO: Refactor this file
 export default function DocumentPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -32,6 +34,7 @@ export default function DocumentPage() {
 
   const [documentTitle, setDocumentTitle] = useState(documentName);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false);
   const editorRef = useRef(null);
   const quillRef = useRef(null);
   const saveTimerRef = useRef(null);
@@ -135,7 +138,7 @@ export default function DocumentPage() {
 
         saveTimerRef.current = setTimeout(async () => {
           try {
-            await savePatch(documentId, composedDeltaRef.current.ops, user.id);
+            await savePatch(documentId, composedDeltaRef.current.ops, user.id, quillRef);
             composedDeltaRef.current = null;
             setSaveStatus("All changes saved");
           } catch (error) {
@@ -167,6 +170,8 @@ export default function DocumentPage() {
   const handleTitleChange = (e) => setDocumentTitle(e.target.value);
 
   const closeShareModal = () => setShowShareModal(false);
+
+  const closeVersionHistoryModal = () => setShowVersionHistoryModal(false);
 
   return (
     <div className="document-page">
@@ -211,7 +216,10 @@ export default function DocumentPage() {
           >
             Back To Homepage
           </button>
-          <button className="document-button version-history-button">
+          <button
+            className="document-button version-history-button"
+            onClick={() => setShowVersionHistoryModal(true)}
+          >
             Versions
           </button>
           <button
@@ -268,6 +276,13 @@ export default function DocumentPage() {
         <ShareDocumentModal
           closeModal={closeShareModal}
           documentId={documentId}
+        />
+      )}
+      {showVersionHistoryModal && (
+        <VersionHistoryModal
+          documentID={documentId}
+          onClose={closeVersionHistoryModal}
+          quillRef={quillRef}
         />
       )}
     </div>
