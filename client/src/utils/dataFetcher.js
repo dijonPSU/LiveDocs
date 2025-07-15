@@ -101,13 +101,14 @@ const savePatch = async (documentId, delta, userId, quillRef) => {
       body: JSON.stringify(body),
     });
     if (!response.ok) throw new Error("Failed to save patch");
+
+    const result = await response.json();
+    return result;
   } catch (error) {
     console.error("Cannot save patch", error.message);
     return null;
   }
 };
-
-
 
 const shareDocument = async (documentId, email) => {
   const URL = `${baseURL}/documents/${documentId}/share`;
@@ -154,7 +155,7 @@ const deleteDocument = async (documentId) => {
 
   try {
     const response = await fetch(URL, {
-      method: "DELETE",
+      method: httpMethod.DELETE,
       credentials: "include",
     });
 

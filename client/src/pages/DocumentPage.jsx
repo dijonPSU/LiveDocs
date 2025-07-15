@@ -46,7 +46,12 @@ export default function DocumentPage() {
       switch (data.action) {
         case dataActionEum.SEND:
           if (quillRef.current) {
-            quillRef.current.updateContents(data.message);
+            console.log(data);
+            if (data.reset) {
+              quillRef.current.setContents(data.message);
+            } else {
+              quillRef.current.updateContents(data.message);
+            }
           }
           break;
 
@@ -138,7 +143,12 @@ export default function DocumentPage() {
 
         saveTimerRef.current = setTimeout(async () => {
           try {
-            await savePatch(documentId, composedDeltaRef.current.ops, user.id, quillRef);
+            await savePatch(
+              documentId,
+              composedDeltaRef.current.ops,
+              user.id,
+              quillRef,
+            );
             composedDeltaRef.current = null;
             setSaveStatus("All changes saved");
           } catch (error) {

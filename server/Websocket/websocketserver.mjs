@@ -179,7 +179,7 @@ function handleFrame(socket, opcode, data) {
 
       try {
         const jsonData = JSON.parse(message);
-        const { action, userId, roomName, message: msg } = jsonData;
+        const { action, userId, roomName, message: msg, reset = false } = jsonData;
 
         switch (action) {
           case messageActionEnum.IDENTIFY:
@@ -203,6 +203,7 @@ function handleFrame(socket, opcode, data) {
                   from: socket.id,
                   roomName,
                   message: msg,
+                  reset: reset,
                 }),
                 false,
               );
