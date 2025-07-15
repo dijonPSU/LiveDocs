@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Quill from "quill";
 import useWebSocket from "../hooks/useWebsocket";
 import ShareDocumentModal from "../components/DocumentPage/ShareDocumentModal";
+import VersionHistoryModal from "../components/DocumentPage/VersionHistoryModal";
 import "quill/dist/quill.snow.css";
 import "../pages/styles/DocumentPage.css";
 import {
@@ -19,6 +20,7 @@ const dataActionEum = {
   CLIENTLIST: "clientList",
 };
 
+// TODO: Refactor this file
 export default function DocumentPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -28,11 +30,15 @@ export default function DocumentPage() {
   const { user, loading } = useUser();
   const [collaborators, setCollaborators] = useState([]);
   const [collaboratorProfiles, setCollaboratorProfiles] = useState([]);
+  const [saveStatus, setSaveStatus] = useState("All changes saved");
 
   const [documentTitle, setDocumentTitle] = useState(documentName);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false);
   const editorRef = useRef(null);
   const quillRef = useRef(null);
+  const saveTimerRef = useRef(null);
+  const composedDeltaRef = useRef(null);
 
   // added callback for WebSocket messages to avoid effect re-run
   const handleSocketMessage = useCallback(
@@ -62,6 +68,15 @@ export default function DocumentPage() {
   );
 
   useEffect(() => {}, [collaboratorProfiles]);
+
+  useEffect(() => {
+    const mirror = document.getElementById("title-mirror");
+    const input = document.getElementById("title-input");
+
+    if (mirror && input) {
+      input.style.width = `${mirror.offsetWidth}px`;
+    }
+  }, [documentTitle]);
 
   const { sendMessage, connected } = useWebSocket(handleSocketMessage, user);
 
@@ -101,16 +116,36 @@ export default function DocumentPage() {
 
       quillRef.current.on("text-change", async (delta, _oldDelta, source) => {
         if (source !== "user" || !documentId || !user?.id) return;
-        try {
-          sendMessage({
-            action: dataActionEum.SEND,
-            roomName: documentId,
-            message: delta,
-          });
-          await savePatch(documentId, delta.ops, user.id);
-        } catch (error) {
-          console.error("Failed to save patch:", error);
+
+        sendMessage({
+          action: dataActionEum.SEND,
+          roomName: documentId,
+          message: delta,
+        });
+
+        setSaveStatus("Saving...");
+
+        // compose deltas so we don't only send the latest one
+        if (composedDeltaRef.current) {
+          composedDeltaRef.current = composedDeltaRef.current.compose(delta);
+        } else {
+          composedDeltaRef.current = delta;
         }
+
+        if (saveTimerRef.current) {
+          clearTimeout(saveTimerRef.current);
+        }
+
+        saveTimerRef.current = setTimeout(async () => {
+          try {
+            await savePatch(documentId, composedDeltaRef.current.ops, user.id, quillRef);
+            composedDeltaRef.current = null;
+            setSaveStatus("All changes saved");
+          } catch (error) {
+            console.error("Failed to save patch:", error);
+            setSaveStatus("Failed to save");
+          }
+        }, 3000);
       });
     }
   }, [connected, documentId, sendMessage, user?.id]);
@@ -136,19 +171,42 @@ export default function DocumentPage() {
 
   const closeShareModal = () => setShowShareModal(false);
 
+  const closeVersionHistoryModal = () => setShowVersionHistoryModal(false);
+
   return (
     <div className="document-page">
       <div className="document-header">
-        <div className="document-logo">LiveDocs</div>
+        <div className="document-left-section">
+          <div className="document-logo">LiveDocs</div>
+          <div className="save-status">
+            {saveStatus === "Saving..." && (
+              <span className="saving">
+                <span className="spinner" /> {saveStatus}
+              </span>
+            )}
+            {saveStatus === "All changes saved" && (
+              <span className="saved">{saveStatus}</span>
+            )}
+            {saveStatus === "Failed to save" && (
+              <span className="error">{saveStatus}</span>
+            )}
+          </div>
+        </div>
 
         <div className="document-title-container">
-          <input
-            type="text"
-            className="document-title-input"
-            value={documentTitle}
-            onChange={handleTitleChange}
-            placeholder="Untitled document"
-          />
+          <div className="document-title-wrapper">
+            <span className="document-title-mirror" id="title-mirror">
+              {documentTitle || "Untitled document"}
+            </span>
+            <input
+              type="text"
+              className="document-title-input"
+              value={documentTitle}
+              onChange={handleTitleChange}
+              placeholder="Untitled document"
+              id="title-input"
+            />
+          </div>
         </div>
 
         <div className="document-actions">
@@ -157,6 +215,12 @@ export default function DocumentPage() {
             onClick={() => navigate("/Homepage")}
           >
             Back To Homepage
+          </button>
+          <button
+            className="document-button version-history-button"
+            onClick={() => setShowVersionHistoryModal(true)}
+          >
+            Versions
           </button>
           <button
             className="document-button share-button"
@@ -176,14 +240,22 @@ export default function DocumentPage() {
           {collaborators.length > 0 && (
             <div className="collaborators">
               {collaboratorProfiles.map((profile) => (
-                <div key={profile.id} className="collaborator">
+                <div
+                  key={profile.id}
+                  className="collaborator"
+                  data-email={profile.email || "Unknown User"}
+                >
                   {profile.image ? (
                     <img
                       src={profile.image}
                       alt={profile.email || "Collaborator"}
                     />
                   ) : (
-                    <div className="no-avatar">N/A</div>
+                    <div className="no-avatar">
+                      {profile.email
+                        ? profile.email.charAt(0).toUpperCase()
+                        : "?"}
+                    </div>
                   )}
                 </div>
               ))}
@@ -204,6 +276,13 @@ export default function DocumentPage() {
         <ShareDocumentModal
           closeModal={closeShareModal}
           documentId={documentId}
+        />
+      )}
+      {showVersionHistoryModal && (
+        <VersionHistoryModal
+          documentID={documentId}
+          onClose={closeVersionHistoryModal}
+          quillRef={quillRef}
         />
       )}
     </div>

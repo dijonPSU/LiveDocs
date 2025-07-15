@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 
-const DocumentCard = ({ doc, onEditClick }) => {
+export default function DocumentCard({ doc, onEditClick }) {
   const navigate = useNavigate();
 
   const handleDocumentCardClick = () => {
@@ -46,6 +46,4 @@ const DocumentCard = ({ doc, onEditClick }) => {
       </div>
     </div>
   );
-};
-
-export default DocumentCard;
+}

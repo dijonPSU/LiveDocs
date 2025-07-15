@@ -84,13 +84,13 @@ const getDocumentContent = async (documentId) => {
   }
 };
 
-const savePatch = async (documentId, delta, userId) => {
+const savePatch = async (documentId, delta, userId, quillRef) => {
   const URL = `${baseURL}/documents/${documentId}/patches`;
 
   const body = {
-    documentId: documentId,
-    delta,
     userId,
+    delta,
+    fullContent: quillRef.current.getContents(),
   };
 
   try {
@@ -106,6 +106,8 @@ const savePatch = async (documentId, delta, userId) => {
     return null;
   }
 };
+
+
 
 const shareDocument = async (documentId, email) => {
   const URL = `${baseURL}/documents/${documentId}/share`;
@@ -195,6 +197,40 @@ const getCollaboratorsProfiles = async (clientIds) => {
   }
 };
 
+const getVersions = async (documentId) => {
+  const URL = `${baseURL}/documents/${documentId}/versions`;
+
+  try {
+    const response = await fetch(URL, { credentials: "include" });
+    if (!response.ok) throw new Error("Failed to fetch versions");
+    const versions = await response.json();
+    return versions;
+  } catch (error) {
+    console.error("Cannot get versions", error.message);
+    throw error;
+  }
+};
+
+const revertToVersion = async (documentId, versionNumber, userId) => {
+  const URL = `${baseURL}/documents/${documentId}/revert`;
+
+  const body = { versionNumber, userId };
+
+  try {
+    const response = await fetch(URL, {
+      method: httpMethod.POST,
+      credentials: "include",
+      headers: httpHeaders,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error("Failed to revert version");
+    return await response.json();
+  } catch (error) {
+    console.error("Cannot revert version", error.message);
+    throw error;
+  }
+};
+
 export {
   getUserData,
   getUserDocuments,
@@ -205,4 +241,6 @@ export {
   getCollaborators,
   deleteDocument,
   getCollaboratorsProfiles,
+  getVersions,
+  revertToVersion,
 };

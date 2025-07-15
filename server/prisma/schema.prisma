@@ -55,6 +55,8 @@ model Version {
 
   document          Document             @relation(fields: [documentId], references: [id])
   user              User                 @relation(fields: [userId], references: [id])
+
+  @@unique([documentId, versionNumber])
 }
 
 
@@ -69,4 +71,3 @@ model Collaborator {
 
   @@unique([userId, documentId])
 }
-

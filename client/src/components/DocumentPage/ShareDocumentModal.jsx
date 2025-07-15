@@ -62,7 +62,9 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
           {/* Collaborators */}
           <div className="collaborators-list">
             <h4>Current Collaborators</h4>
-            {collaborators.length === 0 && <p>No collaborators yet</p>}
+            {collaborators.length === 0 && (
+              <p>Add a collaborator to see the list </p>
+            )}
             <ul>
               {collaborators.map((data) => {
                 return (

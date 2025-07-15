@@ -14,6 +14,8 @@ import {
   deleteDocument,
   getUserData,
   getUserProfiles,
+  getVersions,
+  revertVersion,
 } from "./documents.js";
 
 const app = express();
@@ -75,10 +77,12 @@ app.get("/documents", getDocuments);
 app.get("/documents/:id/content", getDocumentContent);
 app.get("/documents/:id/collaborators", getDocumentCollaborators);
 app.get("/users/:id", getUserData);
+app.get("/documents/:id/versions", getVersions);
 app.post("/documents", createDocument);
 app.post("/documents/:id/patches", savePatch);
 app.post("/documents/:id/share", shareDocument);
 app.post("/users/profiles", getUserProfiles);
+app.post("/documents/:id/revert", revertVersion);
 app.put("/documents/:id/snapshot", updateSnapshot);
 app.delete("/documents/:id", deleteDocument);
 
