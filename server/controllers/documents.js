@@ -34,19 +34,23 @@ export async function createDocument(req, res) {
 }
 
 export async function savePatch(req, res) {
-  const { userId, delta } = req.body;
+  const { userId, delta, fullContent } = req.body;
   const documentId = req.params.id;
 
+  if (!delta || !fullContent) {
+    return res
+      .status(400)
+      .json({ message: "Delta and full content are required" });
+  }
+
   try {
-    const count = await prisma.version.count({
-      where: { documentId },
-    });
+    const count = await prisma.version.count({ where: { documentId } });
 
     const version = await prisma.version.create({
       data: {
         documentId,
         userId,
-        diff: delta,
+        diff: fullContent,
         versionNumber: count + 1,
         isSnapshot: false,
       },
@@ -91,10 +95,23 @@ export async function getDocumentContent(req, res) {
       return res.status(404).json({ message: "Document not found" });
     }
 
+    const latestSnapshot = await prisma.version.findFirst({
+      where: {
+        documentId,
+        isSnapshot: true,
+      },
+      orderBy: { versionNumber: "desc" },
+    });
+
+    const minVersionNumber = latestSnapshot?.versionNumber || 0;
+
     const patches = await prisma.version.findMany({
       where: {
         documentId,
         isSnapshot: false,
+        versionNumber: {
+          gt: minVersionNumber,
+        },
       },
       orderBy: { versionNumber: "asc" },
       select: {
@@ -244,5 +261,89 @@ export async function deleteDocument(req, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to delete document" });
+  }
+}
+
+export async function getVersions(req, res) {
+  const documentId = req.params.id;
+
+  try {
+    const versions = await prisma.version.findMany({
+      where: { documentId },
+      orderBy: { versionNumber: "desc" },
+      select: {
+        versionNumber: true,
+        diff: true,
+        createdAt: true,
+        userId: true,
+      },
+    });
+
+    res.status(200).json(versions);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to get versions" });
+  }
+}
+
+export async function revertVersion(req, res) {
+  const documentId = req.params.id;
+  const { versionNumber, userId } = req.body;
+
+  try {
+    const version = await prisma.version.findUnique({
+      where: {
+        documentId_versionNumber: {
+          documentId,
+          versionNumber,
+        },
+      },
+    });
+
+    if (!version) {
+      return res.status(404).json({ message: "Version not found" });
+    }
+
+    if (!version.diff) {
+      return res
+        .status(400)
+        .json({ message: "Version content (diff) is missing or invalid" });
+    }
+
+    await prisma.document.update({
+      where: { id: documentId },
+      data: {
+        content: version.diff,
+        updatedAt: new Date(),
+      },
+    });
+
+    const latestVersion = await prisma.version.findFirst({
+      where: { documentId },
+      orderBy: { versionNumber: "desc" },
+      select: { versionNumber: true },
+    });
+
+    const nextVersionNumber = latestVersion
+      ? latestVersion.versionNumber + 1
+      : 1;
+
+    await prisma.version.create({
+      data: {
+        documentId,
+        userId,
+        diff: version.diff,
+        versionNumber: nextVersionNumber,
+        isSnapshot: true,
+      },
+    });
+
+    res.status(200).json({
+      message: "Reverted successfully",
+      updatedContent: version.diff,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to revert version" });
   }
 }
