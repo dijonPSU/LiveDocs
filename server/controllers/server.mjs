@@ -48,9 +48,11 @@ app.get(
 
 app.get(
   "/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
+  passport.authenticate("google", {
+    failureRedirect: "http://localhost:5173/callback?error=auth_failed",
+  }),
   (req, res) => {
-    res.redirect("http://localhost:5173/Homepage");
+    res.redirect("http://localhost:5173/callback?success=true");
   },
 );
 
