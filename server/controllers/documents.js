@@ -50,7 +50,7 @@ export async function savePatch(req, res) {
       data: {
         documentId,
         userId,
-        diff: fullContent,
+        diff: delta,
         versionNumber: count + 1,
         isSnapshot: false,
       },
