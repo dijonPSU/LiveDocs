@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { shareDocument, getCollaborators } from "../../../utils/dataFetcher";
-import { useUser } from "../../../hooks/useUser";
+import { shareDocument, getCollaborators } from "../../utils/dataFetcher";
+import { useUser } from "../../hooks/useUser";
 import "./ShareDocumentModal.css";
 
 export default function ShareDocumentModal({ closeModal, documentId }) {
