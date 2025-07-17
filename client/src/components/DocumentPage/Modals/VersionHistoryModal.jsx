@@ -3,9 +3,9 @@ import {
   getVersions,
   revertToVersion,
   savePatch,
-} from "../../utils/dataFetcher";
-import { useUser } from "../../hooks/useUser";
-import useWebSocket from "../../hooks/useWebsocket";
+} from "../../../utils/dataFetcher";
+import { useUser } from "../../../hooks/useUser";
+import useWebSocket from "../../../hooks/useWebsocket";
 import "./VersionHistoryModal.css";
 
 const dataActionEum = {
@@ -40,7 +40,7 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
     fetchVersions();
   }, [documentID]);
 
-  // When previewVersion changes, load it into the editor (without saving)
+  // when previewVersion changes, load it into the editor (without saving)
   useEffect(() => {
     if (!previewVersion || !quillRef.current) return;
     quillRef.current.setContents(previewVersion.diff);
@@ -58,9 +58,19 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
       console.log("Revert response", response);
 
       if (response && response.updatedContent) {
-        quillRef.current.setContents([]);
+        // Set the editor content to the reverted version
+        quillRef.current.setContents(response.updatedContent);
 
-        await savePatch(documentID, null, user.id, quillRef);
+        // Create a delta representing the complete change to the reverted content
+        const delta = {
+          ops: [
+            { delete: quillRef.current.getLength() - 1 },
+            ...response.updatedContent.ops,
+          ],
+        };
+
+        // Save the patch with the proper delta
+        await savePatch(documentID, delta, user.id, quillRef);
 
         try {
           sendMessage({
