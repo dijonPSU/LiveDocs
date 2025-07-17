@@ -5,7 +5,7 @@ import useWebSocket from "../hooks/useWebsocket";
 import useQuillEditor from "../hooks/useQuill";
 import useDebouncedSave from "../hooks/useAutosave";
 
-import { saveStatusEnum, dataActionEum } from "..//utils/constants";
+import { saveStatusEnum, dataActionEum } from "../utils/constants";
 
 import ShareDocumentModal from "../components/DocumentPage/Modals/ShareDocumentModal";
 import VersionHistoryModal from "../components/DocumentPage/Modals/VersionHistoryModal";
@@ -39,7 +39,6 @@ export default function DocumentPage() {
   const editorRef = useRef(null);
   const quillRef = useRef(null);
 
-  // Handle text change and debounce patch saving
   const queueSave = useDebouncedSave(
     (delta) => savePatch(documentId, delta.ops, user.id, quillRef),
     () => setSaveStatus(saveStatusEnum.SAVED),
@@ -61,37 +60,39 @@ export default function DocumentPage() {
 
   useQuillEditor(editorRef, quillRef, handleTextChange);
 
-  const handleSocketMessage = useCallback(
-    (data) => {
-      switch (data.action) {
-        case dataActionEum.SEND:
-          if (quillRef.current) {
-            if (data.reset) {
-              quillRef.current.setContents(data.message);
-            } else {
-              quillRef.current.updateContents(data.message);
-            }
+  const handleSocketMessage = useCallback((data) => {
+    switch (data.action) {
+      case dataActionEum.SEND:
+        if (quillRef.current) {
+          if (data.reset) {
+            quillRef.current.setContents(data.message);
+          } else {
+            quillRef.current.updateContents(data.message);
           }
-          break;
+        }
+        break;
 
-        case dataActionEum.CLIENTLIST:
-          getCollaboratorsProfiles(data.clients).then((profiles) =>
-            setCollaboratorProfiles(
-              profiles.filter((profile) => profile.id !== user.id),
-            ),
-          );
-          break;
+      case dataActionEum.CLIENTLIST:
+        getCollaboratorsProfiles(data.clients).then((profiles) =>
+          setCollaboratorProfiles(
+            profiles.filter((profile) => profile.id !== user?.id),
+          ),
+        );
+        break;
 
-        default:
-          break;
-      }
-    },
-    [user?.id],
-  );
+      default:
+        break;
+    }
+  }, []);
 
-  const { sendMessage, connected } = useWebSocket(handleSocketMessage, user);
+  const { sendMessage, connected } = useWebSocket(handleSocketMessage);
 
-  // join and leave WebSocket room
+  useEffect(() => {
+    if (connected && user?.id) {
+      sendMessage({ action: "identify", userId: user.id });
+    }
+  }, [connected, user?.id, sendMessage]);
+
   useEffect(() => {
     if (!connected || !documentId) return;
     sendMessage({ action: dataActionEum.JOIN, roomName: documentId });
@@ -99,13 +100,12 @@ export default function DocumentPage() {
       sendMessage({ action: dataActionEum.LEAVE, roomName: documentId });
   }, [connected, documentId, sendMessage]);
 
-  // Load initial document content
+    // Load initial document content
   useEffect(() => {
     const loadContent = async () => {
       if (!quillRef.current || !documentId) return;
 
       const content = await getDocumentContent(documentId);
-
       if (!content) return;
 
       const { snapshot, patches } = content;
@@ -124,7 +124,7 @@ export default function DocumentPage() {
     loadContent();
   }, [documentId]);
 
-  // resize title input to match mirror span
+    // resize title input to match mirror span
   useEffect(() => {
     const mirror = document.getElementById("title-mirror");
     const input = document.getElementById("title-input");

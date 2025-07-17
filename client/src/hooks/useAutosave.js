@@ -1,7 +1,6 @@
 import { useRef } from "react";
 const timeout = 3000;
 
-
 export default function useAutosave(save, onSuccess, onError, delay = timeout) {
   const timer = useRef(null);
   const composedDelta = useRef(null);

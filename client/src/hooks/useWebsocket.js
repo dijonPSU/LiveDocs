@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export default function useWebSocket(onMessage, user) {
+export default function useWebSocket(onMessage) {
   const url = "ws://localhost:8080";
   const [connected, setConnected] = useState(false);
   const socketRef = useRef(null);
@@ -17,10 +17,6 @@ export default function useWebSocket(onMessage, user) {
     ws.onopen = () => {
       setConnected(true);
       console.log("WebSocket connected");
-
-      if (user?.id) {
-        ws.send(JSON.stringify({ action: "identify", userId: user.id }));
-      }
     };
 
     ws.onclose = () => {
@@ -46,7 +42,7 @@ export default function useWebSocket(onMessage, user) {
     return () => {
       ws.close();
     };
-  }, [user?.id]);
+  }, []);
 
   const sendMessage = (messageObject) => {
     const ws = socketRef.current;

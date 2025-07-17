@@ -17,7 +17,6 @@ export default function useQuillEditor(editorRef, quillRef, onTextChange) {
       });
 
       quillRef.current.on("text-change", onTextChange);
-      console.log("quill created", quillRef.current)
     }
   }, [editorRef, quillRef, onTextChange]);
 }
