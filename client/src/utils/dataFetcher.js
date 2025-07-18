@@ -252,6 +252,23 @@ const updateDocumentTitle = async (documentId, title) => {
   }
 };
 
+const getVersionContent = async (documentId, versionNumber) => {
+  const URL = `${baseURL}/documents/${documentId}/versions/${versionNumber}`;
+  try {
+    const response = await fetch(URL, {
+      method: httpMethod.GET,
+      credentials: "include",
+      headers: httpHeaders,
+    });
+    if (!response.ok) throw new Error("Failed to get version content");
+    const data = await response.json();
+    return data.content;
+  } catch (error) {
+    console.error("Cannot fetch version content", error.message);
+    throw error;
+  }
+};
+
 export {
   getUserData,
   getUserDocuments,
@@ -265,4 +282,5 @@ export {
   getVersions,
   revertToVersion,
   updateDocumentTitle,
+  getVersionContent,
 };

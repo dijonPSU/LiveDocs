@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import Delta from "quill-delta";
 import {
   getVersions,
-  revertToVersion,
   savePatch,
+  getVersionContent,
 } from "../../../utils/dataFetcher";
 import { useUser } from "../../../hooks/useUser";
 import useWebSocket from "../../../hooks/useWebsocket";
@@ -21,9 +22,9 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
   const [loading, setLoading] = useState(false);
   const [previewVersion, setPreviewVersion] = useState(null);
   const [error, setError] = useState(null);
+  const [currentVersionNumber, setCurrentVersionNumber] = useState(null);
   const { sendMessage } = useWebSocket(() => {}, user);
 
-  // Fetch versions
   useEffect(() => {
     async function fetchVersions() {
       setLoading(true);
@@ -31,6 +32,9 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
       try {
         const data = await getVersions(documentID);
         setVersions(data);
+        if (data && data.length > 0) {
+          setCurrentVersionNumber(data[0].versionNumber);
+        }
       } catch {
         setError("Failed to load versions.");
       } finally {
@@ -40,49 +44,47 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
     fetchVersions();
   }, [documentID]);
 
-  // when previewVersion changes, load it into the editor (without saving)
   useEffect(() => {
-    if (!previewVersion || !quillRef.current) return;
-    quillRef.current.setContents(previewVersion.diff);
-  }, [previewVersion, quillRef]);
+    async function previewVersionContent() {
+      if (!previewVersion || !quillRef.current) return;
+      try {
+        const content = await getVersionContent(
+          documentID,
+          previewVersion.versionNumber,
+        );
+        if (content) {
+          quillRef.current.setContents(new Delta(content));
+        }
+      } catch (err) {
+        console.error("Failed to preview version", err);
+      }
+    }
+    previewVersionContent();
+  }, [previewVersion, documentID, quillRef, user.id]);
 
-  // Revert handler
+
   async function handleRevert(versionNumber) {
     try {
-      console.log("Reverting to version", versionNumber);
-      const response = await revertToVersion(
-        documentID,
-        versionNumber,
-        user.id,
-      );
-      console.log("Revert response", response);
-
-      if (response && response.updatedContent) {
-        // Set the editor content to the reverted version
-        quillRef.current.setContents(response.updatedContent);
-
-        // Create a delta representing the complete change to the reverted content
-        const delta = {
-          ops: [
-            { delete: quillRef.current.getLength() - 1 },
-            ...response.updatedContent.ops,
-          ],
-        };
-
-        // Save the patch with the proper delta
+      const content = await getVersionContent(documentID, versionNumber);
+      if (content && quillRef.current) {
+        quillRef.current.setContents(new Delta(content));
+        const currentLength = quillRef.current.getLength();
+        const delta = new Delta()
+          .retain(0)
+          .delete(currentLength - 1)
+          .concat(new Delta(content));
         await savePatch(documentID, delta, user.id, quillRef);
-
         try {
           sendMessage({
             action: dataActionEum.SEND,
             roomName: documentID,
-            message: response.updatedContent,
+            message: content,
             reset: true,
           });
         } catch (error) {
           console.error("Failed to broadcast revert via WebSocket:", error);
         }
-
+        setCurrentVersionNumber(versionNumber);
         onClose();
       }
     } catch (err) {
@@ -127,11 +129,18 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
                     previewVersion?.versionNumber === version.versionNumber
                       ? "active"
                       : ""
+                  } ${
+                    version.versionNumber === currentVersionNumber
+                      ? "current"
+                      : ""
                   }`}
                 >
                   <div className="version-info">
                     <div className="version-number">
                       Version #{version.versionNumber}
+                      {version.versionNumber === currentVersionNumber && (
+                        <span className="current-version-label">(Current)</span>
+                      )}
                     </div>
                     <div className="version-meta">
                       {new Date(version.createdAt).toLocaleString()}

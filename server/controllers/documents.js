@@ -1,4 +1,5 @@
 import { PrismaClient } from "../generated/prisma/client.js";
+import Delta from "quill-delta"
 const prisma = new PrismaClient();
 
 export async function getDocuments(req, res) {
@@ -362,5 +363,47 @@ export async function updateDocumentTitle(req, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to update document title" });
+  }
+}
+
+export async function getVersionContent(req, res) {
+  const { id: documentId, versionNumber } = req.params;
+  try {
+
+    const snapshot = await prisma.version.findFirst({
+      where: {
+        documentId,
+        isSnapshot: true,
+        versionNumber: { lte: parseInt(versionNumber) },
+      },
+      orderBy: { versionNumber: "desc" },
+    });
+
+
+    const fromVersion = snapshot ? snapshot.versionNumber : 0;
+    const base = snapshot ? snapshot.diff : { ops: [] };
+
+    const patches = await prisma.version.findMany({
+      where: {
+        documentId,
+        isSnapshot: false,
+        versionNumber: {
+          gt: fromVersion,
+          lte: parseInt(versionNumber),
+        },
+      },
+      orderBy: { versionNumber: "asc" },
+    });
+
+
+    let content = new Delta(base);
+    for (const patch of patches) {
+      content = content.compose(new Delta(patch.diff));
+    }
+
+    return res.status(200).json({ content });
+  } catch (err) {
+    console.error("Failed to fetch version content", err);
+    res.status(500).json({ message: "Failed to fetch version content" });
   }
 }
