@@ -1,4 +1,6 @@
 import { useRef } from "react";
+import Delta from "quill-delta";
+
 const timeout = 3000;
 
 export default function useAutosave(save, onSuccess, onError, delay = timeout) {
@@ -6,7 +8,16 @@ export default function useAutosave(save, onSuccess, onError, delay = timeout) {
   const latestDelta = useRef(null);
 
   function storeChanges(delta) {
-    latestDelta.current = delta;
+    // construct delta
+    if (!(delta instanceof Delta)) {
+      delta = new Delta(delta);
+    }
+
+    if (latestDelta.current) {
+      latestDelta.current = latestDelta.current.compose(delta);
+    } else {
+      latestDelta.current = delta;
+    }
 
     if (timer.current) clearTimeout(timer.current);
 
