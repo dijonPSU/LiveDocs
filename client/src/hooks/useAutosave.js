@@ -3,21 +3,17 @@ const timeout = 3000;
 
 export default function useAutosave(save, onSuccess, onError, delay = timeout) {
   const timer = useRef(null);
-  const composedDelta = useRef(null);
+  const latestDelta = useRef(null);
 
   function storeChanges(delta) {
-    if (composedDelta.current) {
-      composedDelta.current = composedDelta.current.compose(delta);
-    } else {
-      composedDelta.current = delta;
-    }
+    latestDelta.current = delta;
 
     if (timer.current) clearTimeout(timer.current);
 
     timer.current = setTimeout(async () => {
       try {
-        await save(composedDelta.current);
-        composedDelta.current = null;
+        await save(latestDelta.current);
+        latestDelta.current = null;
         onSuccess();
       } catch (err) {
         onError(err);

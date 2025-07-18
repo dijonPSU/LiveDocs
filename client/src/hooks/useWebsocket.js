@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 export default function useWebSocket(onMessage) {
   const url = "ws://localhost:8080";
@@ -44,14 +44,14 @@ export default function useWebSocket(onMessage) {
     };
   }, []);
 
-  const sendMessage = (messageObject) => {
+  const sendMessage = useCallback((messageObject) => {
     const ws = socketRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(messageObject));
     } else {
       console.warn("WebSocket not open: message not sent");
     }
-  };
+  }, []);
 
   return {
     sendMessage,
