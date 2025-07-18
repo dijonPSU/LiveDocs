@@ -82,7 +82,7 @@ app.get("/documents/:id/content", getDocumentContent);
 app.get("/documents/:id/collaborators", getDocumentCollaborators);
 app.get("/users/:id", getUserData);
 app.get("/documents/:id/versions", getVersions);
-app.get("/documents/:id/versions/:versionNumber", getVersionContent)
+app.get("/documents/:id/versions/:versionNumber", getVersionContent);
 app.post("/documents", createDocument);
 app.post("/documents/:id/patches", savePatch);
 app.post("/documents/:id/share", shareDocument);

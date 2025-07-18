@@ -1,6 +1,7 @@
 import { PrismaClient } from "../generated/prisma/client.js";
-import Delta from "quill-delta"
+import Delta from "quill-delta";
 const prisma = new PrismaClient();
+const SNAPSHOT_INTERVAL = 20;
 
 export async function getDocuments(req, res) {
   try {
@@ -45,17 +46,41 @@ export async function savePatch(req, res) {
   }
 
   try {
-    const count = await prisma.version.count({ where: { documentId } });
+    // count existing patches
+    const patchCount = await prisma.version.count({
+      where: { documentId, isSnapshot: false },
+    });
 
+    // always save the incoming patch
     const version = await prisma.version.create({
       data: {
         documentId,
         userId,
         diff: delta,
-        versionNumber: count + 1,
+        versionNumber: patchCount + 1,
         isSnapshot: false,
       },
     });
+
+    if ((patchCount + 1) % SNAPSHOT_INTERVAL === 0) {
+      await prisma.version.create({
+        data: {
+          documentId,
+          userId,
+          diff: fullContent,
+          versionNumber: patchCount + 2,
+          isSnapshot: true,
+        },
+      });
+
+      await prisma.document.update({
+        where: { id: documentId },
+        data: {
+          content: fullContent,
+          updatedAt: new Date(),
+        },
+      });
+    }
 
     res.status(201).json(version);
   } catch (err) {
@@ -369,7 +394,6 @@ export async function updateDocumentTitle(req, res) {
 export async function getVersionContent(req, res) {
   const { id: documentId, versionNumber } = req.params;
   try {
-
     const snapshot = await prisma.version.findFirst({
       where: {
         documentId,
@@ -378,7 +402,6 @@ export async function getVersionContent(req, res) {
       },
       orderBy: { versionNumber: "desc" },
     });
-
 
     const fromVersion = snapshot ? snapshot.versionNumber : 0;
     const base = snapshot ? snapshot.diff : { ops: [] };
@@ -394,7 +417,6 @@ export async function getVersionContent(req, res) {
       },
       orderBy: { versionNumber: "asc" },
     });
-
 
     let content = new Delta(base);
     for (const patch of patches) {
