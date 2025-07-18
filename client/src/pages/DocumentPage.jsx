@@ -56,7 +56,7 @@ export default function DocumentPage() {
   );
 
   // Text change handler
-  const handleTextChange = (source) => {
+  const handleTextChange = (_delta, _oldDelta, source) => {
     if (source !== "user" || !documentId || !user?.id) return;
 
     const newDelta = quillRef.current.getContents();

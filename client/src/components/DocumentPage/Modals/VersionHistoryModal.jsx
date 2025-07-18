@@ -62,7 +62,6 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
     previewVersionContent();
   }, [previewVersion, documentID, quillRef, user.id]);
 
-
   async function handleRevert(versionNumber) {
     try {
       const content = await getVersionContent(documentID, versionNumber);

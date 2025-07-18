@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useUser } from "./useUser";
 
 export default function useWebSocket(onMessage) {
   const url = "ws://localhost:8080";
   const [connected, setConnected] = useState(false);
   const socketRef = useRef(null);
   const messageHandlerRef = useRef(onMessage);
+  const { user } = useUser();
 
   useEffect(() => {
     messageHandlerRef.current = onMessage;
@@ -16,7 +18,7 @@ export default function useWebSocket(onMessage) {
 
     ws.onopen = () => {
       setConnected(true);
-      console.log("WebSocket connected");
+      sendMessage({ action: "identify", userId: user.id });
     };
 
     ws.onclose = () => {
@@ -42,6 +44,7 @@ export default function useWebSocket(onMessage) {
     return () => {
       ws.close();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const sendMessage = useCallback((messageObject) => {
