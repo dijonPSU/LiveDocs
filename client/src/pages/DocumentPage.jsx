@@ -4,6 +4,7 @@ import { useUser } from "../hooks/useUser";
 import useWebSocket from "../hooks/useWebsocket";
 import useQuillEditor from "../hooks/useQuill";
 import useDebouncedSave from "../hooks/useAutosave";
+import Delta from "../hooks/delta";
 
 import { saveStatusEnum, dataActionEum } from "../utils/constants";
 
@@ -18,6 +19,8 @@ import {
   savePatch,
   updateDocumentTitle,
 } from "../utils/dataFetcher";
+
+import { computeDeltaDiff } from "../hooks/deltaAlgo";
 
 import "quill/dist/quill.snow.css";
 import "../pages/styles/DocumentPage.css";
@@ -35,19 +38,37 @@ export default function DocumentPage() {
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false);
   const [saveStatus, setSaveStatus] = useState(saveStatusEnum.SAVED);
   const [collaboratorProfiles, setCollaboratorProfiles] = useState([]);
+  const lastSavedDeltaRef = useRef(new Delta());
 
   const editorRef = useRef(null);
   const quillRef = useRef(null);
 
+  // Autosave
   const queueSave = useDebouncedSave(
     (delta) => savePatch(documentId, delta.ops, user.id, quillRef),
-    () => setSaveStatus(saveStatusEnum.SAVED),
+    () => {
+      setSaveStatus(saveStatusEnum.SAVED);
+      if (quillRef.current) {
+        lastSavedDeltaRef.current = quillRef.current.getContents();
+      }
+    },
     () => setSaveStatus(saveStatusEnum.ERROR),
   );
 
-  const handleTextChange = (delta, _oldDelta, source) => {
+  // Text change handler
+  const handleTextChange = (_delta, _oldDelta, source) => {
     if (source !== "user" || !documentId || !user?.id) return;
 
+    const newDelta = quillRef.current.getContents();
+    const baseDelta =
+      lastSavedDeltaRef.current instanceof Delta
+        ? lastSavedDeltaRef.current
+        : new Delta(lastSavedDeltaRef.current);
+
+    const deltaDiff = computeDeltaDiff(baseDelta, newDelta);
+    if (!deltaDiff.ops || !deltaDiff.ops.length) return;
+
+    const delta = new Delta(deltaDiff);
     sendMessage({
       action: dataActionEum.SEND,
       roomName: documentId,
@@ -56,43 +77,44 @@ export default function DocumentPage() {
 
     setSaveStatus(saveStatusEnum.SAVING);
     queueSave(delta);
+    lastSavedDeltaRef.current = newDelta;
   };
 
   useQuillEditor(editorRef, quillRef, handleTextChange);
 
+  // Handle WebSocket messages
   const handleSocketMessage = useCallback((data) => {
     switch (data.action) {
-      case dataActionEum.SEND:
-        if (quillRef.current) {
-          if (data.reset) {
-            quillRef.current.setContents(data.message);
-          } else {
-            quillRef.current.updateContents(data.message);
+        case dataActionEum.SEND:
+          if (quillRef.current) {
+            if (data.reset) {
+              quillRef.current.setContents(data.message);
+            } else {
+              quillRef.current.updateContents(data.message);
+            }
           }
-        }
-        break;
+          break;
 
-      case dataActionEum.CLIENTLIST:
-        getCollaboratorsProfiles(data.clients).then((profiles) =>
-          setCollaboratorProfiles(
-            profiles.filter((profile) => profile.id !== user?.id),
-          ),
-        );
-        break;
+        case dataActionEum.CLIENTLIST:
+          console.log(data.clients)
+          if(data.clients === null) return;
+          getCollaboratorsProfiles(data.clients).then((profiles) =>
+            setCollaboratorProfiles(
+              profiles.filter((profile) => profile.id !== user?.id),
+            ),
+          );
+          break;
 
-      default:
-        break;
-    }
-  }, []);
+        default:
+          break;
+      }
+    },
+    [user?.id],
+  );
 
-  const { sendMessage, connected } = useWebSocket(handleSocketMessage);
+  const { sendMessage, connected } = useWebSocket(handleSocketMessage, user);
 
-  useEffect(() => {
-    if (connected && user?.id) {
-      sendMessage({ action: "identify", userId: user.id });
-    }
-  }, [connected, user?.id, sendMessage]);
-
+  // Join/Leave room
   useEffect(() => {
     if (!connected || !documentId) return;
     sendMessage({ action: dataActionEum.JOIN, roomName: documentId });
@@ -100,45 +122,45 @@ export default function DocumentPage() {
       sendMessage({ action: dataActionEum.LEAVE, roomName: documentId });
   }, [connected, documentId, sendMessage]);
 
-    // Load initial document content
+  // Load document content
   useEffect(() => {
     const loadContent = async () => {
       if (!quillRef.current || !documentId) return;
-
       const content = await getDocumentContent(documentId);
       if (!content) return;
-
       const { snapshot, patches } = content;
-
-      quillRef.current.setContents([]);
-      if (snapshot) {
-        quillRef.current.setContents(snapshot);
-      }
-
+      quillRef.current.setContents(snapshot || []);
       if (patches?.length) {
         patches.forEach((patch) => {
           quillRef.current.updateContents(patch.diff);
         });
       }
+      // Set baseline to final state
+      lastSavedDeltaRef.current = quillRef.current.getContents();
+      console.log(
+        "[Baseline] Set after replay:",
+        JSON.stringify(lastSavedDeltaRef.current),
+      );
     };
     loadContent();
   }, [documentId]);
 
-    // resize title input to match mirror span
+
+  // Title mirror
   useEffect(() => {
     const mirror = document.getElementById("title-mirror");
     const input = document.getElementById("title-input");
-
     if (mirror && input) {
       input.style.width = `${mirror.offsetWidth}px`;
     }
   }, [documentTitle]);
 
+  // Title change handler
   const handleTitleChange = async (e) => {
     if (e.key === "Enter") {
       try {
         await updateDocumentTitle(documentId, documentTitle);
-        e.target.blur();
+        e.target.blur(); // gets rid of focus
       } catch {
         console.log("Failed to update document title");
       }
