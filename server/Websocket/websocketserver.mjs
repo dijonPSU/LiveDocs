@@ -4,6 +4,7 @@ import crypto from "crypto";
 const PORT = 8080;
 
 const rooms = new Map();
+const userSockets = new Map();
 
 // -- websocket constants --
 const WEBSOCKET_MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -21,6 +22,7 @@ const messageActionEnum = {
   SEND: "send",
   CLIENTLIST: "clientList",
   IDENTIFY: "identify",
+  NOTIFICATION: "notification",
 };
 
 // -- server --
@@ -82,6 +84,12 @@ function onSocketUpgrade(req, socket) {
       socket.rooms.clear();
       socket.rooms = null;
     }
+    if (socket.id && userSockets.has(socket.id)) {
+      userSockets.get(socket.id).delete(socket);
+      if (userSockets.get(socket.id).size === 0) {
+        userSockets.delete(socket.id);
+      }
+    }
   });
 }
 
@@ -95,8 +103,6 @@ function createAcceptKey(key) {
 // process dataFrame Buffer
 function processBuffer(socket) {
   let buffer = socket._buffer;
-  console.log("Incoming data");
-
   while (true) {
     if (buffer.length < 2) return; // need at least 2 bytes to read header
 
@@ -162,7 +168,6 @@ function handleFrame(socket, opcode, data) {
 
   switch (opcode) {
     case OPCODE_CLOSE: // Close frame
-      console.log("Client sent close frame");
       socket.end();
       break;
 
@@ -191,6 +196,9 @@ function handleFrame(socket, opcode, data) {
           case messageActionEnum.IDENTIFY:
             if (userId) {
               socket.id = userId;
+              if (!userSockets.has(userId)) userSockets.set(userId, new Set());
+              userSockets.get(userId).add(socket);
+              console.log(`User ${userId} identified`);
             }
             break;
           case messageActionEnum.JOIN:
@@ -217,13 +225,18 @@ function handleFrame(socket, opcode, data) {
               console.log("No room specified");
             }
             break;
+          case messageActionEnum.NOTIFICATION:
+            console.log("Notification received");
+            sendToUser(jsonData.userId, {
+              action: messageActionEnum.NOTIFICATION,
+              message: jsonData.message,
+              documentId: jsonData.documentId,
+            });
+            break;
           default:
-            console.error("Invalid action:", action);
             return;
         }
-      } catch (err) {
-        console.error("JSON processing error:", err);
-        console.error("Invalid JSON content:", message);
+      } catch {
         const errResp = JSON.stringify({
           error: "Invalid JSON format",
           originalMessage: message,
@@ -233,7 +246,6 @@ function handleFrame(socket, opcode, data) {
       break;
     }
     default:
-      console.warn(`Unsupported opcode: ${opcode}`);
       break;
   }
 }
@@ -265,12 +277,10 @@ function sendFrame(socket, opcode, payload) {
 }
 
 function joinRoom(client, roomName) {
-  // create room if it doesn't exist
   if (!rooms.has(roomName)) {
     rooms.set(roomName, new Set());
   }
 
-  // add client to room set
   rooms.get(roomName).add(client);
 
   if (!client.rooms) {
@@ -288,7 +298,6 @@ function joinRoom(client, roomName) {
   sendToRoom(client, roomName, JSON.stringify(clientListMessage), true);
 
   client.rooms.add(roomName);
-  console.log(`Socket ${client.id} joined room ${roomName}`);
 }
 
 function leaveRoom(client, roomName) {
@@ -313,6 +322,7 @@ function leaveRoom(client, roomName) {
 }
 
 function sendToRoom(roomClient, roomName, message, includeSender = false) {
+  console.log(`Sending message to room ${roomName}: ${message}`);
   if (rooms.has(roomName)) {
     const roomToBroadcast = rooms.get(roomName);
     roomToBroadcast.forEach((client) => {
@@ -321,11 +331,20 @@ function sendToRoom(roomClient, roomName, message, includeSender = false) {
       }
     });
   } else {
-    console.error(`Room ${roomName} does not exist`);
     sendFrame(
       roomClient,
       OPCODE_TEXT,
       Buffer.from(`Room ${roomName} does not exist`),
     );
   }
+}
+
+export function sendToUser(userId, messageObj) {
+  const sockets = userSockets.get(userId);
+  if (!sockets) return;
+  const msgStr = JSON.stringify(messageObj);
+  sockets.forEach((socket) => {
+    sendFrame(socket, OPCODE_TEXT, Buffer.from(msgStr));
+  });
+  console.log(`Sent message to user ${userId}: ${msgStr}`);
 }
