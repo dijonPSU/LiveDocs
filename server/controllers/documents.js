@@ -222,9 +222,12 @@ export async function getDocumentCollaborators(req, res) {
   try {
     const documentId = req.params.id;
 
-    const collaborators = await prisma.collaborator.findMany({
-      where: { documentId },
-      select: {
+    const permissions = await prisma.documentPermission.findMany({
+      where: {
+        documentId,
+        groupId: null
+      },
+      include: {
         user: {
           select: {
             id: true,
@@ -235,6 +238,10 @@ export async function getDocumentCollaborators(req, res) {
       },
     });
 
+    const collaborators = permissions.filter(p => p.user).map(p => ({
+      user: p.user,
+      role: p.role,
+    }));
     res.status(200).json(collaborators);
   } catch (err) {
     console.error(err);
@@ -461,3 +468,48 @@ export async function getVersionContent(req, res) {
     res.status(500).json({ message: "Failed to fetch version content" });
   }
 }
+
+export async function updateCollaboratorRole(req, res) {
+  const { documentId, userId } = req.params;
+  const { role } = req.body;
+
+  if (!documentId || !userId || !role) {
+    return res.status(400).json({ message: "Missing required parameters" });
+  }
+
+  try {
+    // Check if a Document Permission exists for this user/
+    const permission = await prisma.documentPermission.findFirst({
+      where: {
+          documentId,
+          userId,
+          groupId: null,
+      },
+    });
+      // If not found create a new one
+      if (!permission) {
+        const created = await prisma.documentPermission.create({
+          data: {
+            documentId,
+            userId,
+            groupId: null,
+            role,
+            grantedBy: req.user.id,
+          },
+        });
+        return res.status(201).json({ message: "Permission created successfully", permission: created });
+      }
+
+      // Update the permission with the new role
+      const updated = await prisma.documentPermission.update({
+        where: { id: permission.id },
+        data: { role },
+      });
+
+      return res.status(200).json({ message: "Permission updated successfully", permission: updated });
+      } catch (err) {
+        console.error("Failed to update permissions", err);
+        return res.status(500).json({ message: "Failed to update permission" });
+      }
+
+  }

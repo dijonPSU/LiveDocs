@@ -18,6 +18,7 @@ import {
   revertVersion,
   updateDocumentTitle,
   getVersionContent,
+  updateCollaboratorRole,
 } from "./documents.js";
 
 const app = express();
@@ -90,6 +91,7 @@ app.post("/users/profiles", getUserProfiles);
 app.post("/documents/:id/revert", revertVersion);
 app.put("/documents/:id/snapshot", updateSnapshot);
 app.patch("/documents/:id", updateDocumentTitle);
+app.patch("/documents/:documentId/collaborators/:userId", updateCollaboratorRole)
 app.delete("/documents/:id", deleteDocument);
 
 app.get("/me", (req, res) => {
