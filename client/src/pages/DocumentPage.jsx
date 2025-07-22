@@ -10,12 +10,12 @@ import ShareDocumentModal from "../components/DocumentPage/Modals/ShareDocumentM
 import VersionHistoryModal from "../components/DocumentPage/Modals/VersionHistoryModal";
 import DocumentHeader from "../components/DocumentPage/Header/DocumentpageHeader";
 import ActiveCollaborators from "../components/DocumentPage/Header/ActiveCollaborators";
-import getColorForUser from "../utils/getColorForUser";
 import {
   getDocumentContent,
   getCollaboratorsProfiles,
   savePatch,
   updateDocumentTitle,
+  getColorForUser
 } from "../utils/dataFetcher";
 import { computeDeltaDiff } from "../hooks/deltaAlgo";
 
