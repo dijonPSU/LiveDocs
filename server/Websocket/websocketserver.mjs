@@ -23,6 +23,7 @@ const messageActionEnum = {
   CLIENTLIST: "clientList",
   IDENTIFY: "identify",
   NOTIFICATION: "notification",
+  CURSOR: "cursor",
 };
 
 // -- server --
@@ -226,13 +227,28 @@ function handleFrame(socket, opcode, data) {
             }
             break;
           case messageActionEnum.NOTIFICATION:
-            console.log("Notification received");
             sendToUser(jsonData.userId, {
               action: messageActionEnum.NOTIFICATION,
               message: jsonData.message,
               documentId: jsonData.documentId,
             });
             break;
+          case messageActionEnum.CURSOR:
+            if (roomName && userId && jsonData.range) {
+              sendToRoom(
+                socket,
+                roomName,
+                JSON.stringify({
+                  action: messageActionEnum.CURSOR,
+                  userId,
+                  range: jsonData.range,
+                  userInfo: jsonData.userInfo || {},
+                }),
+                false,
+              );
+            }
+            break;
+
           default:
             return;
         }
@@ -322,7 +338,6 @@ function leaveRoom(client, roomName) {
 }
 
 function sendToRoom(roomClient, roomName, message, includeSender = false) {
-  console.log(`Sending message to room ${roomName}: ${message}`);
   if (rooms.has(roomName)) {
     const roomToBroadcast = rooms.get(roomName);
     roomToBroadcast.forEach((client) => {
@@ -346,5 +361,4 @@ export function sendToUser(userId, messageObj) {
   sockets.forEach((socket) => {
     sendFrame(socket, OPCODE_TEXT, Buffer.from(msgStr));
   });
-  console.log(`Sent message to user ${userId}: ${msgStr}`);
 }

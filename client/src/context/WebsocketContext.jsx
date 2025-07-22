@@ -18,7 +18,6 @@ export function WebSocketProvider({ children }) {
   const listenersRef = useRef([]);
   const [notifications, setNotifications] = useState([]);
 
-
   const sendMessage = useCallback((msgObj) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify(msgObj));
