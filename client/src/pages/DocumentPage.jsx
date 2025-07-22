@@ -15,9 +15,9 @@ import {
   getCollaboratorsProfiles,
   savePatch,
   updateDocumentTitle,
-  getColorForUser
 } from "../utils/dataFetcher";
 import { computeDeltaDiff } from "../hooks/deltaAlgo";
+import { getColorForUser } from "../utils/helpers";
 
 import "quill/dist/quill.snow.css";
 import "../pages/styles/DocumentPage.css";
@@ -101,7 +101,7 @@ export default function DocumentPage() {
     return unsubscribe;
   }, [user?.id, addListener]);
 
-  //  Render remote cursors 
+  //  Render remote cursors
   useEffect(() => {
     if (!quillRef.current || !quillRef.current.getModule) return;
     const cursors = quillRef.current.getModule("cursors");

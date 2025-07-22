@@ -14,3 +14,8 @@ export const saveStatusEnum = {
 };
 
 
+export const documentRolesEnum = {
+  EDITOR: "EDITOR",
+  VIEWER: "VIEWER",
+  ADMIN: "ADMIN",
+};

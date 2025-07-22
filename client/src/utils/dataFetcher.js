@@ -269,13 +269,24 @@ const getVersionContent = async (documentId, versionNumber) => {
   }
 };
 
-const getColorForUser = (userId) => {
-  const colors = ["#fa3", "#39f", "#2e2", "#f39", "#c83"];
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+
+const updateCollaboratorRole = async (documentId, userId, newRole) => {
+  const URL = `${baseURL}/documents/${documentId}/collaborators/${userId}`;
+
+  try{
+    const response = await fetch(URL, {
+      method: httpMethod.PATCH,
+      credentials: "include",
+      headers: httpHeaders,
+      body: JSON.stringify({ role: newRole }),
+    });
+
+    if (!response.ok) throw new Error("Failed to update collaborator role");
+    return response.json();
+  } catch (error) {
+    console.error("Cannot update collaborator role", error.message);
+    throw error;
   }
-  return colors[Math.abs(hash) % colors.length];
 }
 
 export {
@@ -292,5 +303,5 @@ export {
   revertToVersion,
   updateDocumentTitle,
   getVersionContent,
-  getColorForUser
+  updateCollaboratorRole,
 };
