@@ -101,7 +101,7 @@ export default function DocumentPage() {
     return unsubscribe;
   }, [user?.id, addListener]);
 
-  //  Render remote cursors using quill-cursors module
+  //  Render remote cursors 
   useEffect(() => {
     if (!quillRef.current || !quillRef.current.getModule) return;
     const cursors = quillRef.current.getModule("cursors");
