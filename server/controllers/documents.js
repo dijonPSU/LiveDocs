@@ -1,4 +1,5 @@
 import { PrismaClient } from "../generated/prisma/client.js";
+import { sendEmail } from "./emailService.js";
 import Delta from "quill-delta";
 const prisma = new PrismaClient();
 const SNAPSHOT_INTERVAL = 20;
@@ -163,7 +164,6 @@ export async function shareDocument(req, res) {
     const document = await prisma.document.findUnique({
       where: { id: documentId },
     });
-
     if (!document || document.ownerId !== req.user.id) {
       return res
         .status(403)
@@ -174,12 +174,44 @@ export async function shareDocument(req, res) {
     if (!targetUser) {
       return res.status(404).json({ message: "User not found" });
     }
+    const alreadyCollaborator = await prisma.collaborator.findUnique({
+      where: { userId_documentId: { userId: targetUser.id, documentId } },
+    });
+    if (alreadyCollaborator) {
+      return res
+        .status(400)
+        .json({ message: "User is already a collaborator" });
+    }
 
     await prisma.collaborator.create({
       data: { userId: targetUser.id, documentId },
     });
 
-    res.status(200).json({ message: "Added collaborator" });
+    try {
+      console.log("Sending email to", email);
+      await sendEmail({
+        to: email,
+        fromUser: req.user.email,
+        docTitle: document.title,
+      });
+    } catch (emailErr) {
+      console.error("Email failed", emailErr);
+      res.status(200).json({
+        message: "Added collaborator",
+        userId: targetUser.id,
+        email: targetUser.email,
+        documentTitle: document.title,
+        sharedBy: req.user.email,
+      });
+    }
+
+    res.status(200).json({
+      message: "Added collaborator",
+      userId: targetUser.id,
+      email: targetUser.email,
+      documentTitle: document.title,
+      sharedBy: req.user.email,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to share document" });

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { shareDocument, getCollaborators } from "../../../utils/dataFetcher";
+import { useWS } from "../../../context/WebsocketContext";
 import { useUser } from "../../../hooks/useUser";
+import { dataActionEnum } from "../../../utils/constants";
 import "./ShareDocumentModal.css";
 
 export default function ShareDocumentModal({ closeModal, documentId }) {
@@ -8,6 +10,7 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
   const [globalUserEmail, setGlobalUserEmail] = useState("");
   const [collaborators, setCollaborators] = useState([]);
   const { user } = useUser();
+  const { sendMessage } = useWS();
 
   useEffect(() => {
     async function fetchCollaborators() {
@@ -25,9 +28,14 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
 
   const handleShareDocument = async (documentId, email) => {
     try {
-      const message = await shareDocument(documentId, email);
-      console.log(message);
-      if (message.message === "Added collaborator") {
+      const response = await shareDocument(documentId, email);
+      if (response && response.userId && response.documentTitle) {
+        sendMessage({
+          action: dataActionEnum.NOTIFICATION,
+          userId: response.userId,
+          message: `${user.email} shared a document "${response.documentTitle}" with you.`,
+          documentId,
+        });
         closeModal();
       } else {
         const form = document.getElementById("user-search");
@@ -63,7 +71,7 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
           <div className="collaborators-list">
             <h4>Current Collaborators</h4>
             {collaborators.length === 0 && (
-              <p>Add a collaborator to see the list </p>
+              <p>Add a collaborator to see the list</p>
             )}
             <ul>
               {collaborators.map((data) => {

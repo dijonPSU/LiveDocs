@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "../hooks/useUser";
-import useWebSocket from "../hooks/useWebsocket";
+import { useWS } from "../context/WebsocketContext";
 import useQuillEditor from "../hooks/useQuill";
 import useDebouncedSave from "../hooks/useAutosave";
 import Delta from "../hooks/delta";
 
-import { saveStatusEnum, dataActionEum } from "../utils/constants";
+import { saveStatusEnum, dataActionEnum } from "../utils/constants";
 
 import ShareDocumentModal from "../components/DocumentPage/Modals/ShareDocumentModal";
 import VersionHistoryModal from "../components/DocumentPage/Modals/VersionHistoryModal";
@@ -28,10 +28,10 @@ import "../pages/styles/DocumentPage.css";
 export default function DocumentPage() {
   const location = useLocation();
   const navigate = useNavigate();
-
   const { state } = location;
   const { documentName = "Untitled Document", documentId } = state || {};
   const { user, loading } = useUser();
+  const { sendMessage, addListener, connected } = useWS();
 
   const [documentTitle, setDocumentTitle] = useState(documentName);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -55,6 +55,41 @@ export default function DocumentPage() {
     () => setSaveStatus(saveStatusEnum.ERROR),
   );
 
+  // Join/leave room
+  useEffect(() => {
+    if (!connected || !documentId) return;
+    sendMessage({ action: "join", roomName: documentId });
+    return () => sendMessage({ action: "leave", roomName: documentId });
+  }, [connected, documentId, sendMessage]);
+
+  // Handle WebSocket messages
+  useEffect(() => {
+    const unsubscribe = addListener((data) => {
+      switch (data.action) {
+        case dataActionEnum.SEND:
+          if (quillRef.current) {
+            if (data.reset) {
+              quillRef.current.setContents(data.message);
+            } else {
+              quillRef.current.updateContents(data.message);
+            }
+          }
+          break;
+        case dataActionEnum.CLIENTLIST:
+          if (data.clients == null) return;
+          getCollaboratorsProfiles(data.clients).then((profiles) =>
+            setCollaboratorProfiles(
+              profiles.filter((profile) => profile.id !== user?.id),
+            ),
+          );
+          break;
+        default:
+          break;
+      }
+    });
+    return unsubscribe;
+  }, [user?.id, addListener]);
+
   // Text change handler
   const handleTextChange = (_delta, _oldDelta, source) => {
     if (source !== "user" || !documentId || !user?.id) return;
@@ -70,7 +105,7 @@ export default function DocumentPage() {
 
     const delta = new Delta(deltaDiff);
     sendMessage({
-      action: dataActionEum.SEND,
+      action: dataActionEnum.SEND,
       roomName: documentId,
       message: delta,
     });
@@ -81,46 +116,6 @@ export default function DocumentPage() {
   };
 
   useQuillEditor(editorRef, quillRef, handleTextChange);
-
-  // Handle WebSocket messages
-  const handleSocketMessage = useCallback((data) => {
-    switch (data.action) {
-        case dataActionEum.SEND:
-          if (quillRef.current) {
-            if (data.reset) {
-              quillRef.current.setContents(data.message);
-            } else {
-              quillRef.current.updateContents(data.message);
-            }
-          }
-          break;
-
-        case dataActionEum.CLIENTLIST:
-          console.log(data.clients)
-          if(data.clients === null) return;
-          getCollaboratorsProfiles(data.clients).then((profiles) =>
-            setCollaboratorProfiles(
-              profiles.filter((profile) => profile.id !== user?.id),
-            ),
-          );
-          break;
-
-        default:
-          break;
-      }
-    },
-    [user?.id],
-  );
-
-  const { sendMessage, connected } = useWebSocket(handleSocketMessage, user);
-
-  // Join/Leave room
-  useEffect(() => {
-    if (!connected || !documentId) return;
-    sendMessage({ action: dataActionEum.JOIN, roomName: documentId });
-    return () =>
-      sendMessage({ action: dataActionEum.LEAVE, roomName: documentId });
-  }, [connected, documentId, sendMessage]);
 
   // Load document content
   useEffect(() => {
@@ -137,10 +132,6 @@ export default function DocumentPage() {
       }
       // Set baseline to final state
       lastSavedDeltaRef.current = quillRef.current.getContents();
-      console.log(
-        "[Baseline] Set after replay:",
-        JSON.stringify(lastSavedDeltaRef.current),
-      );
     };
     loadContent();
   }, [documentId]);

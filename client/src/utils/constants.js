@@ -1,8 +1,9 @@
-export const dataActionEum = {
+export const dataActionEnum = {
   JOIN: "join",
   LEAVE: "leave",
   SEND: "send",
   CLIENTLIST: "clientList",
+  NOTIFICATION: "notification",
 };
 
 export const saveStatusEnum = {
