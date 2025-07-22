@@ -21,109 +21,111 @@ enum DocumentRole {
 }
 
 model User {
-  id                String               @id @default(cuid())
-  googleId          String               @unique
-  email             String               @unique
-  image             String
-  accessToken       String
-  refreshToken      String
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @default(now())
+  id           String   @id @default(cuid())
+  googleId     String   @unique
+  email        String   @unique
+  image        String
+  accessToken  String
+  refreshToken String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
 
-  documents         Document[]
-  versions          Version[]
-  collaborators     Collaborator[]
-  groups            UserGroup[]
+  documents          Document[]
+  versions           Version[]
+  collaborators      Collaborator[]
+  groups             UserGroup[]          @relation("GroupMembers")
+  DocumentPermission DocumentPermission[]
+  GroupMembership    GroupMembership[]
 }
 
 model Document {
-  id                String               @id @default(cuid())
-  title             String
-  content           Json
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @default(now())
-  ownerId           String
-  owner             User                 @relation(fields: [ownerId], references: [id])
+  id        String   @id @default(cuid())
+  title     String
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id])
 
-  collaborators     Collaborator[]
-  versions          Version[]
-  permissions       DocumentPermission[]
-  shareLinks        ShareLink[]
+  collaborators Collaborator[]
+  versions      Version[]
+  permissions   DocumentPermission[]
+  shareLinks    ShareLink[]
 }
 
 model Version {
-  id                String               @id @default(cuid())
-  documentId        String
-  userId            String
-  versionNumber     Int
-  diff              Json
-  isSnapshot        Boolean              @default(false)
-  createdAt         DateTime             @default(now())
+  id            String   @id @default(cuid())
+  documentId    String
+  userId        String
+  versionNumber Int
+  diff          Json
+  isSnapshot    Boolean  @default(false)
+  createdAt     DateTime @default(now())
 
-  document          Document             @relation(fields: [documentId], references: [id])
-  user              User                 @relation(fields: [userId], references: [id])
+  document Document @relation(fields: [documentId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
 
   @@unique([documentId, versionNumber])
 }
 
-
 model Collaborator {
-  id                String               @id @default(cuid())
-  userId            String
-  documentId        String
-  joinedAt          DateTime             @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  documentId String
+  joinedAt   DateTime @default(now())
 
-  user              User                 @relation(fields: [userId], references: [id])
-  document          Document             @relation(fields: [documentId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  document Document @relation(fields: [documentId], references: [id])
 
   @@unique([userId, documentId])
 }
 
-
 model DocumentPermission {
-  id                String               @id @default(cuid())
-  documentId        String
-  userId            String?
-  groupId           String?
-  role              DocumentRole
-  expiresAt         DateTime?
-  grantedBy         String
-  createdAt         DateTime             @default(now())
+  id         String       @id @default(cuid())
+  documentId String
+  userId     String?
+  groupId    String?
+  role       DocumentRole
+  expiresAt  DateTime?
+  grantedBy  String
+  createdAt  DateTime     @default(now())
 
-  document          Document             @relation(fields: [documentId], references: [id])
-  user              User?                @relation(fields: [userId], references: [id])
-  group             UserGroup?           @relation(fields: [groupId], references: [id])
+  document Document   @relation(fields: [documentId], references: [id])
+  user     User?      @relation(fields: [userId], references: [id])
+  group    UserGroup? @relation(fields: [groupId], references: [id])
 
   @@unique([documentId, userId, groupId])
 }
 
 model ShareLink {
-  id          String                     @id @default(cuid())
-  documentId  String
-  urlToken    String                     @unique
-  role        DocumentRole
-  expiresAt   DateTime?
-  createdAt   DateTime                   @default(now())
-  createdBy   String
+  id         String       @id @default(cuid())
+  documentId String
+  urlToken   String       @unique
+  role       DocumentRole
+  expiresAt  DateTime?
+  createdAt  DateTime     @default(now())
+  createdBy  String
 
-  document    Document                   @relation(fields: [documentId], references: [id])
+  document Document @relation(fields: [documentId], references: [id])
 }
 
 model UserGroup {
-  id          String                     @id @default(cuid())
-  name        String
-  members     User[]                     @relation("GroupMembers")
-  createdAt   DateTime                   @default(now())
+  id                 String               @id @default(cuid())
+  name               String
+  members            User[]               @relation("GroupMembers")
+  createdAt          DateTime             @default(now())
+  DocumentPermission DocumentPermission[]
+  GroupMembership    GroupMembership[]
 }
 
 model GroupMembership {
-  id        String                       @id @default(cuid())
-  userId    String
-  groupId   String
-  joinedAt  DateTime                     @default(now())
+  id       String   @id @default(cuid())
+  userId   String
+  groupId  String
+  joinedAt DateTime @default(now())
 
-  user      User                         @relation(fields: [userId], references: [id])
-  group     UserGroup                    @relation(fields: [groupId], references: [id])
+  user  User      @relation(fields: [userId], references: [id])
+  group UserGroup @relation(fields: [groupId], references: [id])
 
   @@unique([userId, groupId])
 }
