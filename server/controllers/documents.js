@@ -10,7 +10,7 @@ export async function getDocuments(req, res) {
       where: {
         OR: [
           { ownerId: req.user.id },
-          { collaborators: { some: { userId: req.user.id } } },
+          { permissions: { some: { userId: req.user.id } } },
         ],
       },
       orderBy: { updatedAt: "desc" },
@@ -159,8 +159,9 @@ export async function getDocumentContent(req, res) {
 export async function shareDocument(req, res) {
   try {
     const documentId = req.params.id;
-    const { email } = req.body;
+    const { email, role = "EDITOR" } = req.body;
 
+    // Check document exists and ownership
     const document = await prisma.document.findUnique({
       where: { id: documentId },
     });
@@ -170,10 +171,13 @@ export async function shareDocument(req, res) {
         .json({ message: "You're not the owner of this document" });
     }
 
+    // Find target user by email
     const targetUser = await prisma.user.findUnique({ where: { email } });
     if (!targetUser) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    // Prevent duplicate collaboration (Collaborator table)
     const alreadyCollaborator = await prisma.collaborator.findUnique({
       where: { userId_documentId: { userId: targetUser.id, documentId } },
     });
@@ -183,12 +187,33 @@ export async function shareDocument(req, res) {
         .json({ message: "User is already a collaborator" });
     }
 
-    await prisma.collaborator.create({
-      data: { userId: targetUser.id, documentId },
+    // Prevent duplicate documentPermission
+    const alreadyPermission = await prisma.documentPermission.findFirst({
+      where: {
+        documentId,
+        userId: targetUser.id,
+        groupId: null,
+      },
+    });
+    if (alreadyPermission) {
+      return res
+        .status(400)
+        .json({ message: "User already has a permission on this document" });
+    }
+
+    // Create documentPermission with role
+    await prisma.documentPermission.create({
+      data: {
+        documentId,
+        userId: targetUser.id,
+        groupId: null,
+        role,
+        grantedBy: req.user.id,
+      },
     });
 
+    // Send an email to the collaborator
     try {
-      console.log("Sending email to", email);
       await sendEmail({
         to: email,
         fromUser: req.user.email,
@@ -196,8 +221,10 @@ export async function shareDocument(req, res) {
       });
     } catch (emailErr) {
       console.error("Email failed", emailErr);
-      res.status(200).json({
-        message: "Added collaborator",
+
+      // Still add user
+      return res.status(200).json({
+        message: "Added collaborator (email failed)",
         userId: targetUser.id,
         email: targetUser.email,
         documentTitle: document.title,
@@ -225,7 +252,6 @@ export async function getDocumentCollaborators(req, res) {
     const permissions = await prisma.documentPermission.findMany({
       where: {
         documentId,
-        groupId: null
       },
       include: {
         user: {
@@ -317,8 +343,10 @@ export async function deleteDocument(req, res) {
         .json({ message: "Not authorized to delete this document" });
     }
 
+    // Delete all related data
     await prisma.version.deleteMany({ where: { documentId } });
     await prisma.collaborator.deleteMany({ where: { documentId } });
+    await prisma.documentPermission.deleteMany({ where: { documentId } });
 
     await prisma.document.delete({ where: { id: documentId } });
 
@@ -511,5 +539,28 @@ export async function updateCollaboratorRole(req, res) {
         console.error("Failed to update permissions", err);
         return res.status(500).json({ message: "Failed to update permission" });
       }
+  }
+
+export async function getUserRole(req, res) {
+  const { documentId } = req.params;
+
+  try {
+    const permission = await prisma.documentPermission.findFirst({
+      where: {
+        documentId,
+        userId: req.user.id,
+      }
+    });
+
+    if (!permission) {
+      return res.status(404).json({ message: "Permission not found" });
+    }
+
+    return res.status(200).json({ role: permission.role });
+
+  } catch (err) {
+    console.error("Failed to get user role", err);
+    return res.status(500).json({ message: "Failed to get user role" });
+  }
 
   }

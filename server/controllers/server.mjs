@@ -19,6 +19,7 @@ import {
   updateDocumentTitle,
   getVersionContent,
   updateCollaboratorRole,
+  getUserRole,
 } from "./documents.js";
 
 const app = express();
@@ -81,6 +82,7 @@ app.use((req, res, next) => {
 app.get("/documents", getDocuments);
 app.get("/documents/:id/content", getDocumentContent);
 app.get("/documents/:id/collaborators", getDocumentCollaborators);
+app.get("/documents/:id/userRole", getUserRole)
 app.get("/users/:id", getUserData);
 app.get("/documents/:id/versions", getVersions);
 app.get("/documents/:id/versions/:versionNumber", getVersionContent);
@@ -91,7 +93,10 @@ app.post("/users/profiles", getUserProfiles);
 app.post("/documents/:id/revert", revertVersion);
 app.put("/documents/:id/snapshot", updateSnapshot);
 app.patch("/documents/:id", updateDocumentTitle);
-app.patch("/documents/:documentId/collaborators/:userId", updateCollaboratorRole)
+app.patch(
+  "/documents/:documentId/collaborators/:userId",
+  updateCollaboratorRole,
+);
 app.delete("/documents/:id", deleteDocument);
 
 app.get("/me", (req, res) => {
