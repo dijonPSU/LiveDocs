@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { shareDocument, getCollaborators, updateCollaboratorRole } from "../../../utils/dataFetcher";
+import {
+  shareDocument,
+  getCollaborators,
+  updateCollaboratorRole,
+} from "../../../utils/dataFetcher";
 import { useWS } from "../../../context/WebsocketContext";
 import { useUser } from "../../../hooks/useUser";
 import { dataActionEnum, documentRolesEnum } from "../../../utils/constants";
@@ -36,10 +40,10 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
           message: `${user.email} shared a document "${response.documentTitle}" with you.`,
           documentId,
         });
-        setEmail("")
+        setEmail("");
         // refetch collaborators
         const users = await getCollaborators(documentId);
-        setCollaborators(users)
+        setCollaborators(users);
       } else {
         const form = document.getElementById("user-search");
         form.style.borderColor = "red";
@@ -55,13 +59,13 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
     const newRole = e.target.value;
     try {
       await updateCollaboratorRole(documentId, collaboratorId, newRole);
-      setCollaborators(collaborators =>
-        collaborators.map(c =>
-          c.user.id === collaboratorId ? { ...c, role: newRole } : c
-        )
+      setCollaborators((collaborators) =>
+        collaborators.map((c) =>
+          c.user.id === collaboratorId ? { ...c, role: newRole } : c,
+        ),
       );
     } catch {
-      // TODO: Change to toast  
+      // TODO: Change to toast
       alert("Failed to update role");
     }
   };
@@ -112,7 +116,6 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
                       <option value={documentRolesEnum.ADMIN}>Admin</option>
                     </select>
                   </li>
-
                 );
               })}
             </ul>

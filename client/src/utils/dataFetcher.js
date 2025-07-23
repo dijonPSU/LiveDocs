@@ -59,10 +59,8 @@ const createDocument = async (title) => {
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error("Failed to create document");
-    console.log("Document created successfully");
     return await response.json();
   } catch (error) {
-    console.log("error");
     console.error("Cannot create document", error.message);
     return null;
   }
@@ -77,7 +75,6 @@ const getDocumentContent = async (documentId) => {
     });
     if (!response.ok) throw new Error("Failed to fetch document content");
     const content = await response.json();
-    console.log("Document content fetched successfully");
     return content;
   } catch (error) {
     console.error("Cannot get document content", error.message);
@@ -269,11 +266,10 @@ const getVersionContent = async (documentId, versionNumber) => {
   }
 };
 
-
 const updateCollaboratorRole = async (documentId, userId, newRole) => {
   const URL = `${baseURL}/documents/${documentId}/collaborators/${userId}`;
 
-  try{
+  try {
     const response = await fetch(URL, {
       method: httpMethod.PATCH,
       credentials: "include",
@@ -287,7 +283,24 @@ const updateCollaboratorRole = async (documentId, userId, newRole) => {
     console.error("Cannot update collaborator role", error.message);
     throw error;
   }
-}
+};
+
+const getUserRole = async (documentId) => {
+  const URL = `${baseURL}/documents/${documentId}/userRole`;
+
+  try {
+    const response = await fetch(URL, {
+      credentials: "include",
+    });
+    if (!response.ok) throw new Error("Failed to fetch user role");
+
+    const userRole = await response.json();
+    return userRole;
+  } catch (error) {
+    console.error("Cannot get user role", error.message);
+    throw error;
+  }
+};
 
 export {
   getUserData,
@@ -304,4 +317,5 @@ export {
   updateDocumentTitle,
   getVersionContent,
   updateCollaboratorRole,
+  getUserRole
 };
