@@ -5,21 +5,18 @@ import { useWS } from "../context/WebsocketContext";
 import useQuillEditor from "../hooks/useQuill";
 import useDebouncedSave from "../hooks/useAutosave";
 import Delta from "../hooks/delta";
-
 import { saveStatusEnum, dataActionEnum } from "../utils/constants";
-
 import ShareDocumentModal from "../components/DocumentPage/Modals/ShareDocumentModal";
 import VersionHistoryModal from "../components/DocumentPage/Modals/VersionHistoryModal";
 import DocumentHeader from "../components/DocumentPage/Header/DocumentpageHeader";
 import ActiveCollaborators from "../components/DocumentPage/Header/ActiveCollaborators";
-
 import {
   getDocumentContent,
   getCollaboratorsProfiles,
   savePatch,
   updateDocumentTitle,
+  getColorForUser
 } from "../utils/dataFetcher";
-
 import { computeDeltaDiff } from "../hooks/deltaAlgo";
 
 import "quill/dist/quill.snow.css";
@@ -38,7 +35,9 @@ export default function DocumentPage() {
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false);
   const [saveStatus, setSaveStatus] = useState(saveStatusEnum.SAVED);
   const [collaboratorProfiles, setCollaboratorProfiles] = useState([]);
+  const [remoteCursors, setRemoteCursors] = useState({});
   const lastSavedDeltaRef = useRef(new Delta());
+  const lastSelectionRef = useRef(null);
 
   const editorRef = useRef(null);
   const quillRef = useRef(null);
@@ -62,17 +61,19 @@ export default function DocumentPage() {
     return () => sendMessage({ action: "leave", roomName: documentId });
   }, [connected, documentId, sendMessage]);
 
-  // Handle WebSocket messages
+  // Handle WebSocket message
   useEffect(() => {
     const unsubscribe = addListener((data) => {
       switch (data.action) {
         case dataActionEnum.SEND:
+          if (data.from === user?.id) return;
           if (quillRef.current) {
             if (data.reset) {
               quillRef.current.setContents(data.message);
             } else {
               quillRef.current.updateContents(data.message);
             }
+            lastSavedDeltaRef.current = quillRef.current.getContents(); // relatime baseline sync
           }
           break;
         case dataActionEnum.CLIENTLIST:
@@ -83,12 +84,49 @@ export default function DocumentPage() {
             ),
           );
           break;
+        case dataActionEnum.CURSOR:
+          if (!data.userId || data.userId === user?.id) return;
+          setRemoteCursors((prev) => ({
+            ...prev,
+            [data.userId]: {
+              range: data.range,
+              userInfo: data.userInfo || {},
+            },
+          }));
+          break;
         default:
           break;
       }
     });
     return unsubscribe;
   }, [user?.id, addListener]);
+
+  //  Render remote cursors 
+  useEffect(() => {
+    if (!quillRef.current || !quillRef.current.getModule) return;
+    const cursors = quillRef.current.getModule("cursors");
+
+    // Remove any stale cursors
+    cursors.cursors().forEach((cursor) => {
+      if (!remoteCursors[cursor.id]) {
+        cursors.removeCursor(cursor.id);
+      }
+    });
+
+    // Add & move all current cursors
+    Object.entries(remoteCursors).forEach(([userId, { range, userInfo }]) => {
+      if (!range || typeof range.index !== "number") {
+        cursors.removeCursor(userId);
+        return;
+      }
+      cursors.createCursor(
+        userId,
+        userInfo?.email || userId,
+        getColorForUser(userId),
+      );
+      cursors.moveCursor(userId, range);
+    });
+  }, [remoteCursors, quillRef]);
 
   // Text change handler
   const handleTextChange = (_delta, _oldDelta, source) => {
@@ -117,6 +155,55 @@ export default function DocumentPage() {
 
   useQuillEditor(editorRef, quillRef, handleTextChange);
 
+  // Broadcast cursor position
+  useEffect(() => {
+    if (!quillRef.current) return;
+    const quill = quillRef.current;
+
+    function broadcastSelection(range) {
+      if (!range || !user?.id || !documentId) return;
+      // Only broadcast if changed
+      if (
+        !lastSelectionRef.current ||
+        range.index !== lastSelectionRef.current.index ||
+        range.length !== lastSelectionRef.current.length
+      ) {
+        sendMessage({
+          action: dataActionEnum.CURSOR,
+          roomName: documentId,
+          userId: user.id,
+          range,
+          userInfo: {
+            id: user.id,
+            email: user.email,
+          },
+        });
+        lastSelectionRef.current = range;
+      }
+    }
+
+    function handleSelectionChange(range, _oldRange, source) {
+      if (source === "user") {
+        broadcastSelection(range);
+      }
+    }
+
+    function handleTextChange() {
+      const range = quill.getSelection();
+      if (range) {
+        broadcastSelection(range);
+      }
+    }
+
+    quill.on("selection-change", handleSelectionChange);
+    quill.on("text-change", handleTextChange);
+
+    return () => {
+      quill.off("selection-change", handleSelectionChange);
+      quill.off("text-change", handleTextChange);
+    };
+  }, [sendMessage, user?.id, documentId, quillRef]);
+
   // Load document content
   useEffect(() => {
     const loadContent = async () => {
@@ -135,7 +222,6 @@ export default function DocumentPage() {
     };
     loadContent();
   }, [documentId]);
-
 
   // Title mirror
   useEffect(() => {
@@ -174,15 +260,11 @@ export default function DocumentPage() {
           <ActiveCollaborators profiles={collaboratorProfiles} />
         }
       />
-
-      {/* Document Content */}
       <div className="document-content">
         <div className="editor-container">
           <div ref={editorRef}></div>
         </div>
       </div>
-
-      {/* Modals */}
       {showShareModal && (
         <ShareDocumentModal
           closeModal={() => setShowShareModal(false)}

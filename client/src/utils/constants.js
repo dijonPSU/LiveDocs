@@ -4,6 +4,7 @@ export const dataActionEnum = {
   SEND: "send",
   CLIENTLIST: "clientList",
   NOTIFICATION: "notification",
+  CURSOR: "cursor",
 };
 
 export const saveStatusEnum = {
@@ -11,3 +12,5 @@ export const saveStatusEnum = {
   SAVED: "All changes saved",
   ERROR: "Failed to save",
 };
+
+

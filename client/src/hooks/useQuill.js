@@ -1,5 +1,8 @@
 import { useEffect } from "react";
 import Quill from "quill";
+import QuillCursors from "quill-cursors";
+
+Quill.register("modules/cursors", QuillCursors);
 
 export default function useQuillEditor(editorRef, quillRef, onTextChange) {
   useEffect(() => {
@@ -7,6 +10,7 @@ export default function useQuillEditor(editorRef, quillRef, onTextChange) {
       quillRef.current = new Quill(editorRef.current, {
         theme: "snow",
         modules: {
+          cursors: true,
           toolbar: [
             [{ header: [1, 2, 3, false] }],
             ["bold", "italic", "underline"],
