@@ -6,15 +6,29 @@ const SNAPSHOT_INTERVAL = 20;
 
 export async function getDocuments(req, res) {
   try {
+    // Find all groups this user is a member of
+    const userGroups = await prisma.userGroup.findMany({
+      where: {
+        members: {
+          some: { id: req.user.id }
+        }
+      },
+      select: { id: true },
+    });
+    const groupIds = userGroups.map((group) => group.id);
+
+    // Find documents the user has access to through ownership, direct permissions, or group permissions
     const documents = await prisma.document.findMany({
       where: {
         OR: [
           { ownerId: req.user.id },
           { permissions: { some: { userId: req.user.id } } },
+          groupIds.length > 0 ? { permissions: { some: { groupId: { in: groupIds } } } } : { id: "___never___" },
         ],
       },
       orderBy: { updatedAt: "desc" },
     });
+
     res.json(documents);
   } catch (err) {
     console.error(err);
@@ -249,9 +263,12 @@ export async function getDocumentCollaborators(req, res) {
   try {
     const documentId = req.params.id;
 
+    // Get individual collaborators
     const permissions = await prisma.documentPermission.findMany({
       where: {
         documentId,
+        userId: { not: null },
+        groupId: null,
       },
       include: {
         user: {
@@ -347,6 +364,8 @@ export async function deleteDocument(req, res) {
     await prisma.version.deleteMany({ where: { documentId } });
     await prisma.collaborator.deleteMany({ where: { documentId } });
     await prisma.documentPermission.deleteMany({ where: { documentId } });
+    await prisma.userGroup.deleteMany({ where: { documentId } });
+    await prisma.shareLink.deleteMany({ where: { documentId } });
 
     await prisma.document.delete({ where: { id: documentId } });
 
@@ -542,25 +561,58 @@ export async function updateCollaboratorRole(req, res) {
   }
 
 export async function getUserRole(req, res) {
-  const { documentId } = req.params;
+  const documentId = req.params.id;
+  const userId = req.user.id;
 
   try {
-    const permission = await prisma.documentPermission.findFirst({
-      where: {
-        documentId,
-        userId: req.user.id,
-      }
+    // Check if user is document owner
+    const document = await prisma.document.findUnique({
+      where: { id: documentId },
+      select: { ownerId: true },
     });
 
-    if (!permission) {
+    if (document && document.ownerId === userId) {
+      return res.status(200).json({ role: "ADMIN" });
+    }
+
+    // Find all groups this user is a member of
+    const userGroups = await prisma.userGroup.findMany({
+      where: {
+        members: {
+          some: { id: userId }
+        }
+      },
+      select: { id: true },
+    });
+    const groupIds = userGroups.map((group) => group.id);
+
+    // Fetch all relevant permissions
+    const permissions = await prisma.documentPermission.findMany({
+      where: {
+        documentId,
+        OR: [
+          { userId },
+          groupIds.length > 0 ? { groupId: { in: groupIds } } : { id: "___never___" },
+        ],
+      },
+    });
+
+    // Pick the highest priority role
+    const rolePriority = { ADMIN: 3, EDITOR: 2, VIEWER: 1 };
+    let highest = null;
+    for (const perm of permissions) {
+      if (!highest || rolePriority[perm.role] > rolePriority[highest.role]) {
+        highest = perm;
+      }
+    }
+
+    if (!highest) {
       return res.status(404).json({ message: "Permission not found" });
     }
 
-    return res.status(200).json({ role: permission.role });
-
+    return res.status(200).json({ role: highest.role });
   } catch (err) {
     console.error("Failed to get user role", err);
     return res.status(500).json({ message: "Failed to get user role" });
   }
-
-  }
+}

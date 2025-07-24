@@ -22,6 +22,16 @@ import {
   getUserRole,
 } from "./documents.js";
 
+import {
+  createGroup,
+  addGroupMember,
+  removeGroupMember,
+  deleteGroup,
+  addGroupPermission,
+  listGroups,
+  listAllGroups,
+} from "./groups.js";
+
 const app = express();
 app.use(express.json());
 app.use(
@@ -79,25 +89,35 @@ app.use((req, res, next) => {
   next();
 });
 
+
+// API routes
 app.get("/documents", getDocuments);
 app.get("/documents/:id/content", getDocumentContent);
 app.get("/documents/:id/collaborators", getDocumentCollaborators);
-app.get("/documents/:id/userRole", getUserRole)
+app.get("/documents/:id/userRole", getUserRole);
 app.get("/users/:id", getUserData);
 app.get("/documents/:id/versions", getVersions);
 app.get("/documents/:id/versions/:versionNumber", getVersionContent);
+app.get("/groups", listGroups);
+app.get("/groups/all", listAllGroups);
+
 app.post("/documents", createDocument);
 app.post("/documents/:id/patches", savePatch);
 app.post("/documents/:id/share", shareDocument);
 app.post("/users/profiles", getUserProfiles);
 app.post("/documents/:id/revert", revertVersion);
+app.post("/groups", createGroup);
+app.post("/groups/:groupId/members", addGroupMember);
+app.post("/documents/:docId/permissions/group", addGroupPermission);
+
 app.put("/documents/:id/snapshot", updateSnapshot);
+
 app.patch("/documents/:id", updateDocumentTitle);
-app.patch(
-  "/documents/:documentId/collaborators/:userId",
-  updateCollaboratorRole,
-);
+app.patch("/documents/:documentId/collaborators/:userId", updateCollaboratorRole);
+
+app.delete("/groups/:groupId", deleteGroup);
 app.delete("/documents/:id", deleteDocument);
+app.delete("/groups/:groupId/members/:userId", removeGroupMember);
 
 app.get("/me", (req, res) => {
   res.json(req.user);
