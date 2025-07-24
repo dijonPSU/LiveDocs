@@ -1,0 +1,178 @@
+.group-details-modal {
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.group-info {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.group-info p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.group-info strong {
+  color: #202124;
+  font-weight: 500;
+}
+
+.add-member-section {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.add-member-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #202124;
+}
+
+.add-member-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-member-form .form-control {
+  flex: 1;
+}
+
+.error-message {
+  color: #d93025;
+  font-size: 12px;
+  margin-top: 8px;
+  background: #fef2f2;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border-left: 3px solid #d93025;
+}
+
+.members-section {
+  margin-top: 24px;
+}
+
+.members-section h4 {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #202124;
+}
+
+.members-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.no-members {
+  color: #5f6368;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
+}
+
+.member-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: #fff;
+  transition: background 0.12s;
+}
+
+.member-item:hover {
+  background: #f8f9fa;
+}
+
+.member-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 12px;
+  object-fit: cover;
+}
+
+.member-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.member-email {
+  font-size: 14px;
+  color: #202124;
+  font-weight: 400;
+}
+
+.owner-badge {
+  font-size: 11px;
+  color: #4b52d9;
+  background: #e8f0fe;
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-top: 2px;
+  align-self: flex-start;
+  font-weight: 500;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 13px;
+  min-width: auto;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #b52d20;
+}
+
+.btn-danger:disabled {
+  background-color: #f1f3f4;
+  color: #5f6368;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .group-details-modal {
+    width: 95%;
+    max-width: none;
+  }
+
+  .add-member-form {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .member-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .member-info {
+    width: 100%;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
