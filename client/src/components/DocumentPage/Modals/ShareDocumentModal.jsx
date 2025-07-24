@@ -7,16 +7,16 @@ import {
 import { useWS } from "../../../context/WebsocketContext";
 import { useUser } from "../../../hooks/useUser";
 import { dataActionEnum, documentRolesEnum } from "../../../utils/constants";
-import GroupsManagementModal from "./GroupsManagementModal";
-import "./ShareDocumentModal.css";
+import { useNavigate } from "react-router-dom";
+import "./styles/ShareDocumentModal.css";
 
 export default function ShareDocumentModal({ closeModal, documentId }) {
   const [email, setEmail] = useState("");
   const [globalUserEmail, setGlobalUserEmail] = useState("");
   const [collaborators, setCollaborators] = useState([]);
-  const [showGroupsManagement, setShowGroupsManagement] = useState(false);
   const { user } = useUser();
   const { sendMessage } = useWS();
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchCollaborators() {
@@ -72,6 +72,11 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
     }
   };
 
+  const handleManageGroups = () => {
+    closeModal();
+    navigate(`/groups-management?documentId=${documentId}`);
+  };
+
   return (
     <>
       <div className="modal-overlay active">
@@ -80,10 +85,11 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
             <h2 className="modal-title">Share Document</h2>
           </div>
           <div className="modal-body">
-
             {/* User Collaboration Section */}
             <div className="form-group">
-              <label htmlFor="user-search">Search for users to collaborate</label>
+              <label htmlFor="user-search">
+                Search for users to collaborate
+              </label>
               <input
                 type="text"
                 className="form-control"
@@ -100,7 +106,6 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
                 Share
               </button>
             </div>
-
 
             {/* Collaborators */}
             <div className="collaborators-list">
@@ -137,7 +142,7 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={() => setShowGroupsManagement(true)}
+                onClick={handleManageGroups}
               >
                 Manage All Groups
               </button>
@@ -152,12 +157,6 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
           </div>
         </div>
       </div>
-      {showGroupsManagement && (
-        <GroupsManagementModal
-          onClose={() => setShowGroupsManagement(false)}
-          documentId={documentId}
-        />
-      )}
     </>
   );
 }
