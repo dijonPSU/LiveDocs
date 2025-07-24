@@ -18,6 +18,51 @@
   justify-content: space-between;
 }
 
+/* Preview Banner */
+.preview-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: #fff3cd;
+  border-bottom: 1px solid #ffeaa7;
+  color: #856404;
+  font-size: 14px;
+  z-index: 9;
+}
+
+.preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.preview-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.preview-description {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.btn-stop-preview {
+  background-color: #856404;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-stop-preview:hover {
+  background-color: #6c5200;
+}
+
 .document-left-section {
   display: flex;
   align-items: center;
