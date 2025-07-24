@@ -6,15 +6,29 @@ const SNAPSHOT_INTERVAL = 20;
 
 export async function getDocuments(req, res) {
   try {
+    // Find all groups this user is a member of
+    const userGroups = await prisma.userGroup.findMany({
+      where: {
+        members: {
+          some: { id: req.user.id }
+        }
+      },
+      select: { id: true },
+    });
+    const groupIds = userGroups.map((group) => group.id);
+
+    // Find documents the user has access to through ownership, direct permissions, or group permissions
     const documents = await prisma.document.findMany({
       where: {
         OR: [
           { ownerId: req.user.id },
-          { collaborators: { some: { userId: req.user.id } } },
+          { permissions: { some: { userId: req.user.id } } },
+          groupIds.length > 0 ? { permissions: { some: { groupId: { in: groupIds } } } } : { id: "___never___" },
         ],
       },
       orderBy: { updatedAt: "desc" },
     });
+
     res.json(documents);
   } catch (err) {
     console.error(err);
@@ -159,8 +173,9 @@ export async function getDocumentContent(req, res) {
 export async function shareDocument(req, res) {
   try {
     const documentId = req.params.id;
-    const { email } = req.body;
+    const { email, role = "EDITOR" } = req.body;
 
+    // Check document exists and ownership
     const document = await prisma.document.findUnique({
       where: { id: documentId },
     });
@@ -170,10 +185,13 @@ export async function shareDocument(req, res) {
         .json({ message: "You're not the owner of this document" });
     }
 
+    // Find target user by email
     const targetUser = await prisma.user.findUnique({ where: { email } });
     if (!targetUser) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    // Prevent duplicate collaboration (Collaborator table)
     const alreadyCollaborator = await prisma.collaborator.findUnique({
       where: { userId_documentId: { userId: targetUser.id, documentId } },
     });
@@ -183,12 +201,33 @@ export async function shareDocument(req, res) {
         .json({ message: "User is already a collaborator" });
     }
 
-    await prisma.collaborator.create({
-      data: { userId: targetUser.id, documentId },
+    // Prevent duplicate documentPermission
+    const alreadyPermission = await prisma.documentPermission.findFirst({
+      where: {
+        documentId,
+        userId: targetUser.id,
+        groupId: null,
+      },
+    });
+    if (alreadyPermission) {
+      return res
+        .status(400)
+        .json({ message: "User already has a permission on this document" });
+    }
+
+    // Create documentPermission with role
+    await prisma.documentPermission.create({
+      data: {
+        documentId,
+        userId: targetUser.id,
+        groupId: null,
+        role,
+        grantedBy: req.user.id,
+      },
     });
 
+    // Send an email to the collaborator
     try {
-      console.log("Sending email to", email);
       await sendEmail({
         to: email,
         fromUser: req.user.email,
@@ -196,8 +235,10 @@ export async function shareDocument(req, res) {
       });
     } catch (emailErr) {
       console.error("Email failed", emailErr);
-      res.status(200).json({
-        message: "Added collaborator",
+
+      // Still add user
+      return res.status(200).json({
+        message: "Added collaborator (email failed)",
         userId: targetUser.id,
         email: targetUser.email,
         documentTitle: document.title,
@@ -222,9 +263,14 @@ export async function getDocumentCollaborators(req, res) {
   try {
     const documentId = req.params.id;
 
-    const collaborators = await prisma.collaborator.findMany({
-      where: { documentId },
-      select: {
+    // Get individual collaborators
+    const permissions = await prisma.documentPermission.findMany({
+      where: {
+        documentId,
+        userId: { not: null },
+        groupId: null,
+      },
+      include: {
         user: {
           select: {
             id: true,
@@ -235,6 +281,10 @@ export async function getDocumentCollaborators(req, res) {
       },
     });
 
+    const collaborators = permissions.filter(p => p.user).map(p => ({
+      user: p.user,
+      role: p.role,
+    }));
     res.status(200).json(collaborators);
   } catch (err) {
     console.error(err);
@@ -310,8 +360,12 @@ export async function deleteDocument(req, res) {
         .json({ message: "Not authorized to delete this document" });
     }
 
+    // Delete all related data
     await prisma.version.deleteMany({ where: { documentId } });
     await prisma.collaborator.deleteMany({ where: { documentId } });
+    await prisma.documentPermission.deleteMany({ where: { documentId } });
+    await prisma.userGroup.deleteMany({ where: { documentId } });
+    await prisma.shareLink.deleteMany({ where: { documentId } });
 
     await prisma.document.delete({ where: { id: documentId } });
 
@@ -459,5 +513,106 @@ export async function getVersionContent(req, res) {
   } catch (err) {
     console.error("Failed to fetch version content", err);
     res.status(500).json({ message: "Failed to fetch version content" });
+  }
+}
+
+export async function updateCollaboratorRole(req, res) {
+  const { documentId, userId } = req.params;
+  const { role } = req.body;
+
+  if (!documentId || !userId || !role) {
+    return res.status(400).json({ message: "Missing required parameters" });
+  }
+
+  try {
+    // Check if a Document Permission exists for this user/
+    const permission = await prisma.documentPermission.findFirst({
+      where: {
+          documentId,
+          userId,
+          groupId: null,
+      },
+    });
+      // If not found create a new one
+      if (!permission) {
+        const created = await prisma.documentPermission.create({
+          data: {
+            documentId,
+            userId,
+            groupId: null,
+            role,
+            grantedBy: req.user.id,
+          },
+        });
+        return res.status(201).json({ message: "Permission created successfully", permission: created });
+      }
+
+      // Update the permission with the new role
+      const updated = await prisma.documentPermission.update({
+        where: { id: permission.id },
+        data: { role },
+      });
+
+      return res.status(200).json({ message: "Permission updated successfully", permission: updated });
+      } catch (err) {
+        console.error("Failed to update permissions", err);
+        return res.status(500).json({ message: "Failed to update permission" });
+      }
+  }
+
+export async function getUserRole(req, res) {
+  const documentId = req.params.id;
+  const userId = req.user.id;
+
+  try {
+    // Check if user is document owner
+    const document = await prisma.document.findUnique({
+      where: { id: documentId },
+      select: { ownerId: true },
+    });
+
+    if (document && document.ownerId === userId) {
+      return res.status(200).json({ role: "ADMIN" });
+    }
+
+    // Find all groups this user is a member of
+    const userGroups = await prisma.userGroup.findMany({
+      where: {
+        members: {
+          some: { id: userId }
+        }
+      },
+      select: { id: true },
+    });
+    const groupIds = userGroups.map((group) => group.id);
+
+    // Fetch all relevant permissions
+    const permissions = await prisma.documentPermission.findMany({
+      where: {
+        documentId,
+        OR: [
+          { userId },
+          groupIds.length > 0 ? { groupId: { in: groupIds } } : { id: "___never___" },
+        ],
+      },
+    });
+
+    // Pick the highest priority role
+    const rolePriority = { ADMIN: 3, EDITOR: 2, VIEWER: 1 };
+    let highest = null;
+    for (const perm of permissions) {
+      if (!highest || rolePriority[perm.role] > rolePriority[highest.role]) {
+        highest = perm;
+      }
+    }
+
+    if (!highest) {
+      return res.status(404).json({ message: "Permission not found" });
+    }
+
+    return res.status(200).json({ role: highest.role });
+  } catch (err) {
+    console.error("Failed to get user role", err);
+    return res.status(500).json({ message: "Failed to get user role" });
   }
 }

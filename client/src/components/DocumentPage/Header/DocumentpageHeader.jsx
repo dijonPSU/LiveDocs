@@ -1,4 +1,5 @@
 import { saveStatusEnum } from "../../../utils/constants";
+import "../../../pages/styles/DocumentPage.css";
 
 export default function DocumentHeader({
   documentTitle,
@@ -11,6 +12,7 @@ export default function DocumentHeader({
   user,
   loading,
   collaboratorProfiles,
+  userRole
 }) {
   return (
     <div className="document-header">
@@ -44,6 +46,7 @@ export default function DocumentHeader({
             onKeyDown={handleTitleChange}
             placeholder="Untitled document"
             id="title-input"
+            disabled={userRole === "VIEWER"}
           />
         </div>
       </div>

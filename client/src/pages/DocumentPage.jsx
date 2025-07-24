@@ -5,7 +5,7 @@ import { useWS } from "../context/WebsocketContext";
 import useQuillEditor from "../hooks/useQuill";
 import useDebouncedSave from "../hooks/useAutosave";
 import Delta from "../hooks/delta";
-import { saveStatusEnum, dataActionEnum } from "../utils/constants";
+import { saveStatusEnum, dataActionEnum, documentRolesEnum } from "../utils/constants";
 import ShareDocumentModal from "../components/DocumentPage/Modals/ShareDocumentModal";
 import VersionHistoryModal from "../components/DocumentPage/Modals/VersionHistoryModal";
 import DocumentHeader from "../components/DocumentPage/Header/DocumentpageHeader";
@@ -15,9 +15,10 @@ import {
   getCollaboratorsProfiles,
   savePatch,
   updateDocumentTitle,
-  getColorForUser
+  getUserRole
 } from "../utils/dataFetcher";
 import { computeDeltaDiff } from "../hooks/deltaAlgo";
+import { getColorForUser } from "../utils/helpers";
 
 import "quill/dist/quill.snow.css";
 import "../pages/styles/DocumentPage.css";
@@ -36,6 +37,7 @@ export default function DocumentPage() {
   const [saveStatus, setSaveStatus] = useState(saveStatusEnum.SAVED);
   const [collaboratorProfiles, setCollaboratorProfiles] = useState([]);
   const [remoteCursors, setRemoteCursors] = useState({});
+  const [userRole, setUserRole] = useState(null);
   const lastSavedDeltaRef = useRef(new Delta());
   const lastSelectionRef = useRef(null);
 
@@ -101,7 +103,7 @@ export default function DocumentPage() {
     return unsubscribe;
   }, [user?.id, addListener]);
 
-  //  Render remote cursors 
+  //  Render remote cursors
   useEffect(() => {
     if (!quillRef.current || !quillRef.current.getModule) return;
     const cursors = quillRef.current.getModule("cursors");
@@ -153,7 +155,25 @@ export default function DocumentPage() {
     lastSavedDeltaRef.current = newDelta;
   };
 
-  useQuillEditor(editorRef, quillRef, handleTextChange);
+
+  // Fetch and set user role
+  useEffect(() => {
+  const fetchAndSetRole = async () => {
+    if (!documentId || !user?.id) return;
+    try {
+      const data = await getUserRole(documentId);
+      setUserRole(data.role);
+    } catch (err) {
+      // TODO: Add Toast Error handlng
+      console.error("Failed to load collaborators", err);
+    }
+  }
+  fetchAndSetRole();
+}, [documentId, user?.id]);
+
+
+
+  useQuillEditor(editorRef, quillRef, handleTextChange, userRole);
 
   // Broadcast cursor position
   useEffect(() => {
@@ -202,7 +222,7 @@ export default function DocumentPage() {
       quill.off("selection-change", handleSelectionChange);
       quill.off("text-change", handleTextChange);
     };
-  }, [sendMessage, user?.id, documentId, quillRef]);
+  }, [sendMessage, user?.id, documentId, quillRef, user.email]);
 
   // Load document content
   useEffect(() => {
@@ -244,6 +264,22 @@ export default function DocumentPage() {
     }
   };
 
+  const handleShareModal = () => {
+    if (userRole === documentRolesEnum.VIEWER || userRole === documentRolesEnum.EDITOR){
+      return;
+    }
+
+    setShowShareModal(true);
+  };
+
+  const handlerVersionHistoryModal = () => {
+    if (userRole === documentRolesEnum.VIEWER){
+      return;
+    }
+    setShowVersionHistoryModal(true);
+  };
+
+
   return (
     <div className="document-page">
       <DocumentHeader
@@ -252,13 +288,14 @@ export default function DocumentPage() {
         handleTitleChange={handleTitleChange}
         saveStatus={saveStatus}
         navigate={navigate}
-        openShareModal={() => setShowShareModal(true)}
-        openVersionModal={() => setShowVersionHistoryModal(true)}
+        openShareModal={() => handleShareModal()}
+        openVersionModal={() => handlerVersionHistoryModal()}
         user={user}
         loading={loading}
         collaboratorProfiles={
           <ActiveCollaborators profiles={collaboratorProfiles} />
         }
+        userRole={userRole}
       />
       <div className="document-content">
         <div className="editor-container">
