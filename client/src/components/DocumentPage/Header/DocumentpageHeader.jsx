@@ -12,7 +12,7 @@ export default function DocumentHeader({
   user,
   loading,
   collaboratorProfiles,
-  userRole
+  userRole,
 }) {
   return (
     <div className="document-header">

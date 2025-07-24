@@ -137,7 +137,7 @@
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: #b52d20;
+  background-color: #c0392b;
 }
 
 .btn-danger:disabled {

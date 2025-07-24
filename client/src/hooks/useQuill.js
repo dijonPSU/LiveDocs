@@ -5,7 +5,12 @@ import { documentRolesEnum } from "../utils/constants";
 
 Quill.register("modules/cursors", QuillCursors);
 
-export default function useQuillEditor(editorRef, quillRef, onTextChange, userRole) {
+export default function useQuillEditor(
+  editorRef,
+  quillRef,
+  onTextChange,
+  userRole,
+) {
   useEffect(() => {
     if (editorRef.current && !quillRef.current) {
       quillRef.current = new Quill(editorRef.current, {

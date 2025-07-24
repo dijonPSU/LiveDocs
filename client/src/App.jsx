@@ -2,6 +2,7 @@ import LoginPage from "./pages/LoginPage";
 import CallbackPage from "./pages/CallbackPage";
 import HomePage from "./pages/HomePageC.jsx";
 import DocumentPage from "./pages/DocumentPage";
+import GroupsManagementPage from "./pages/GroupsManagementPage";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/protectedRoute";
 import { UserProvider } from "./context/UserContext";
@@ -29,6 +30,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DocumentPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/groups-management"
+              element={
+                <ProtectedRoute>
+                  <GroupsManagementPage />
                 </ProtectedRoute>
               }
             />
