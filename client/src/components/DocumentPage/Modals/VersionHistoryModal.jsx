@@ -8,7 +8,7 @@ import {
 import { useUser } from "../../../hooks/useUser";
 import useWebSocket from "../../../hooks/useWebsocket";
 import { dataActionEnum } from "../../../utils/constants";
-import "./VersionHistoryModal.css";
+import "./styles/VersionHistoryModal.css";
 
 export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
   const { user } = useUser();
@@ -55,7 +55,7 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
       try {
         const content = await getVersionContent(
           documentID,
-          previewVersion.versionNumber
+          previewVersion.versionNumber,
         );
         if (content) {
           quillRef.current.setContents(new Delta(content));
@@ -108,14 +108,20 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
     yesterday.setDate(yesterday.getDate() - 1);
 
     if (date.toDateString() === now.toDateString()) {
-      return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return `Today at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return `Yesterday at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return `Yesterday at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     } else if (now - date < 7 * 24 * 60 * 60 * 1000) {
-      return `${date.toLocaleDateString([], { weekday: 'long' })} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return `${date.toLocaleDateString([], { weekday: "long" })} at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) +
-        ` at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return (
+        date.toLocaleDateString([], {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }) +
+        ` at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+      );
     }
   };
 
@@ -163,8 +169,10 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
                     key={version.versionNumber}
                     className={[
                       "carousel-item",
-                      previewVersion?.versionNumber === version.versionNumber && "active",
-                      version.versionNumber === currentVersionNumber && "current",
+                      previewVersion?.versionNumber === version.versionNumber &&
+                        "active",
+                      version.versionNumber === currentVersionNumber &&
+                        "current",
                     ]
                       .filter(Boolean)
                       .join(" ")}
@@ -183,7 +191,8 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
                         className="btn-preview"
                         onClick={() => setPreviewVersion(version)}
                         disabled={
-                          previewVersion?.versionNumber === version.versionNumber || isReverting
+                          previewVersion?.versionNumber ===
+                            version.versionNumber || isReverting
                         }
                       >
                         {previewVersion?.versionNumber === version.versionNumber
@@ -223,7 +232,11 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef }) {
               Clear Preview
             </button>
           )}
-          <button className="btn-secondary" onClick={onClose} disabled={isReverting}>
+          <button
+            className="btn-secondary"
+            onClick={onClose}
+            disabled={isReverting}
+          >
             Close
           </button>
         </div>

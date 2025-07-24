@@ -5,7 +5,11 @@ import { useWS } from "../context/WebsocketContext";
 import useQuillEditor from "../hooks/useQuill";
 import useDebouncedSave from "../hooks/useAutosave";
 import Delta from "../hooks/delta";
-import { saveStatusEnum, dataActionEnum, documentRolesEnum } from "../utils/constants";
+import {
+  saveStatusEnum,
+  dataActionEnum,
+  documentRolesEnum,
+} from "../utils/constants";
 import ShareDocumentModal from "../components/DocumentPage/Modals/ShareDocumentModal";
 import VersionHistoryModal from "../components/DocumentPage/Modals/VersionHistoryModal";
 import DocumentHeader from "../components/DocumentPage/Header/DocumentpageHeader";
@@ -15,7 +19,7 @@ import {
   getCollaboratorsProfiles,
   savePatch,
   updateDocumentTitle,
-  getUserRole
+  getUserRole,
 } from "../utils/dataFetcher";
 import { computeDeltaDiff } from "../hooks/deltaAlgo";
 import { getColorForUser } from "../utils/helpers";
@@ -155,23 +159,20 @@ export default function DocumentPage() {
     lastSavedDeltaRef.current = newDelta;
   };
 
-
   // Fetch and set user role
   useEffect(() => {
-  const fetchAndSetRole = async () => {
-    if (!documentId || !user?.id) return;
-    try {
-      const data = await getUserRole(documentId);
-      setUserRole(data.role);
-    } catch (err) {
-      // TODO: Add Toast Error handlng
-      console.error("Failed to load collaborators", err);
-    }
-  }
-  fetchAndSetRole();
-}, [documentId, user?.id]);
-
-
+    const fetchAndSetRole = async () => {
+      if (!documentId || !user?.id) return;
+      try {
+        const data = await getUserRole(documentId);
+        setUserRole(data.role);
+      } catch (err) {
+        // TODO: Add Toast Error handlng
+        console.error("Failed to load collaborators", err);
+      }
+    };
+    fetchAndSetRole();
+  }, [documentId, user?.id]);
 
   useQuillEditor(editorRef, quillRef, handleTextChange, userRole);
 
@@ -222,7 +223,8 @@ export default function DocumentPage() {
       quill.off("selection-change", handleSelectionChange);
       quill.off("text-change", handleTextChange);
     };
-  }, [sendMessage, user?.id, documentId, quillRef, user.email]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sendMessage, user?.id, documentId, quillRef]);
 
   // Load document content
   useEffect(() => {
@@ -265,7 +267,10 @@ export default function DocumentPage() {
   };
 
   const handleShareModal = () => {
-    if (userRole === documentRolesEnum.VIEWER || userRole === documentRolesEnum.EDITOR){
+    if (
+      userRole === documentRolesEnum.VIEWER ||
+      userRole === documentRolesEnum.EDITOR
+    ) {
       return;
     }
 
@@ -273,12 +278,11 @@ export default function DocumentPage() {
   };
 
   const handlerVersionHistoryModal = () => {
-    if (userRole === documentRolesEnum.VIEWER){
+    if (userRole === documentRolesEnum.VIEWER) {
       return;
     }
     setShowVersionHistoryModal(true);
   };
-
 
   return (
     <div className="document-page">

@@ -13,7 +13,6 @@ export const saveStatusEnum = {
   ERROR: "Failed to save",
 };
 
-
 export const documentRolesEnum = {
   EDITOR: "EDITOR",
   VIEWER: "VIEWER",

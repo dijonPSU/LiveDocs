@@ -335,16 +335,15 @@ const getAllUserGroups = async () => {
   }
 };
 
-
 const createGroup = async (groupName, defaultRole, documentId) => {
   const URL = `${baseURL}/groups`;
 
-  try{
+  try {
     const respond = await fetch(URL, {
       method: httpMethod.POST,
       credentials: "include",
       headers: httpHeaders,
-      body: JSON.stringify({ name: groupName, defaultRole, documentId}),
+      body: JSON.stringify({ name: groupName, defaultRole, documentId }),
     });
     if (!respond.ok) throw new Error("Failed to create group");
 
@@ -429,6 +428,20 @@ const addGroupDocumentPermission = async (documentId, groupId, role) => {
   }
 };
 
+const getGroupById = async (groupId) => {
+  const URL = `${baseURL}/groups/${groupId}`;
+  try {
+    const response = await fetch(URL, {
+      credentials: "include",
+    });
+    if (!response.ok) throw new Error("Failed to fetch group");
+    return await response.json();
+  } catch (error) {
+    console.error("Cannot get group", error.message);
+    return null;
+  }
+};
+
 export {
   getUserData,
   getUserDocuments,
@@ -452,4 +465,5 @@ export {
   removeGroupMember,
   deleteGroup,
   addGroupDocumentPermission,
+  getGroupById,
 };
