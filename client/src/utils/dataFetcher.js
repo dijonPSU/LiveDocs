@@ -108,12 +108,13 @@ const savePatch = async (documentId, delta, userId, quillRef) => {
   }
 };
 
-const shareDocument = async (documentId, email) => {
+const shareDocument = async (documentId, email, role) => {
   const URL = `${baseURL}/documents/${documentId}/share`;
 
   const body = {
     documentId: documentId,
     email,
+    role,
   };
 
   try {
@@ -302,6 +303,132 @@ const getUserRole = async (documentId) => {
   }
 };
 
+const getUserGroups = async (documentId) => {
+  const URL = `${baseURL}/groups?documentId=${documentId}`;
+
+  try {
+    const response = await fetch(URL, {
+      credentials: "include",
+    });
+    if (!response.ok) throw new Error("Failed to fetch groups");
+
+    return await response.json();
+  } catch (error) {
+    console.error("Cannot get groups", error.message);
+    throw error;
+  }
+};
+
+const getAllUserGroups = async () => {
+  const URL = `${baseURL}/groups/all`;
+
+  try {
+    const response = await fetch(URL, {
+      credentials: "include",
+    });
+    if (!response.ok) throw new Error("Failed to fetch all groups");
+
+    return await response.json();
+  } catch (error) {
+    console.error("Cannot get all groups", error.message);
+    throw error;
+  }
+};
+
+
+const createGroup = async (groupName, defaultRole, documentId) => {
+  const URL = `${baseURL}/groups`;
+
+  try{
+    const respond = await fetch(URL, {
+      method: httpMethod.POST,
+      credentials: "include",
+      headers: httpHeaders,
+      body: JSON.stringify({ name: groupName, defaultRole, documentId}),
+    });
+    if (!respond.ok) throw new Error("Failed to create group");
+
+    return await respond.json();
+  } catch (error) {
+    console.error("Cannot create group", error.message);
+    throw error;
+  }
+};
+
+const addGroupMember = async (groupId, email) => {
+  const URL = `${baseURL}/groups/${groupId}/members`;
+
+  try {
+    const response = await fetch(URL, {
+      method: httpMethod.POST,
+      credentials: "include",
+      headers: httpHeaders,
+      body: JSON.stringify({ email }),
+    });
+    if (!response.ok) throw new Error("Failed to add group member");
+
+    return await response.json();
+  } catch (error) {
+    console.error("Cannot add group member", error.message);
+    throw error;
+  }
+};
+
+const removeGroupMember = async (groupId, userId) => {
+  const URL = `${baseURL}/groups/${groupId}/members/${userId}`;
+
+  try {
+    const response = await fetch(URL, {
+      method: httpMethod.DELETE,
+      credentials: "include",
+      headers: httpHeaders,
+    });
+    if (!response.ok) throw new Error("Failed to remove group member");
+
+    return await response.json();
+  } catch (error) {
+    console.error("Cannot remove group member", error.message);
+    throw error;
+  }
+};
+
+const deleteGroup = async (groupId) => {
+  const URL = `${baseURL}/groups/${groupId}`;
+
+  try {
+    const response = await fetch(URL, {
+      method: httpMethod.DELETE,
+      credentials: "include",
+      headers: httpHeaders,
+    });
+    if (!response.ok) throw new Error("Failed to delete group");
+
+    return true;
+  } catch (error) {
+    console.error("Cannot delete group", error.message);
+    throw error;
+  }
+};
+
+const addGroupDocumentPermission = async (documentId, groupId, role) => {
+  const URL = `${baseURL}/documents/${documentId}/permissions/group`;
+
+  try {
+    const response = await fetch(URL, {
+      method: httpMethod.POST,
+      credentials: "include",
+      headers: httpHeaders,
+      body: JSON.stringify({ groupId, role }),
+    });
+    if (!response.ok) throw new Error("Failed to add group permission");
+
+    return await response.json();
+  } catch (error) {
+    console.error("Cannot add group permission", error.message);
+    throw error;
+  }
+};
+
 export {
   getUserData,
   getUserDocuments,
@@ -317,5 +444,12 @@ export {
   updateDocumentTitle,
   getVersionContent,
   updateCollaboratorRole,
-  getUserRole
+  getUserRole,
+  getUserGroups,
+  getAllUserGroups,
+  createGroup,
+  addGroupMember,
+  removeGroupMember,
+  deleteGroup,
+  addGroupDocumentPermission,
 };
