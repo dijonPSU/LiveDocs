@@ -30,6 +30,7 @@ import {
   addGroupPermission,
   listGroups,
   listAllGroups,
+  getGroupById,
 } from "./groups.js";
 
 const app = express();
@@ -89,7 +90,6 @@ app.use((req, res, next) => {
   next();
 });
 
-
 // API routes
 app.get("/documents", getDocuments);
 app.get("/documents/:id/content", getDocumentContent);
@@ -100,6 +100,7 @@ app.get("/documents/:id/versions", getVersions);
 app.get("/documents/:id/versions/:versionNumber", getVersionContent);
 app.get("/groups", listGroups);
 app.get("/groups/all", listAllGroups);
+app.get("/groups/:groupId", getGroupById);
 
 app.post("/documents", createDocument);
 app.post("/documents/:id/patches", savePatch);
@@ -113,7 +114,10 @@ app.post("/documents/:docId/permissions/group", addGroupPermission);
 app.put("/documents/:id/snapshot", updateSnapshot);
 
 app.patch("/documents/:id", updateDocumentTitle);
-app.patch("/documents/:documentId/collaborators/:userId", updateCollaboratorRole);
+app.patch(
+  "/documents/:documentId/collaborators/:userId",
+  updateCollaboratorRole,
+);
 
 app.delete("/groups/:groupId", deleteGroup);
 app.delete("/documents/:id", deleteDocument);

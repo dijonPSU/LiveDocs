@@ -30,8 +30,6 @@ export async function createGroup(req, res) {
   }
 }
 
-
-
 // Add member to group
 export async function addGroupMember(req, res) {
   const { groupId } = req.params;
@@ -40,7 +38,7 @@ export async function addGroupMember(req, res) {
   // Check if group exists
   const group = await prisma.userGroup.findUnique({
     where: { id: groupId },
-    include: { document: true }
+    include: { document: true },
   });
   if (!group) return res.status(404).json({ message: "Group not found" });
 
@@ -131,11 +129,9 @@ export async function addGroupPermission(req, res) {
 
   // Doc admin/owner check
   if (!(await isDocumentAdminOrOwner(userId, docId))) {
-    return res
-      .status(403)
-      .json({
-        message: "Only doc admin/owner can edit group permissions for this doc",
-      });
+    return res.status(403).json({
+      message: "Only doc admin/owner can edit group permissions for this doc",
+    });
   }
 
   try {
@@ -188,7 +184,7 @@ export async function listGroups(req, res) {
     const groups = await prisma.userGroup.findMany({
       where: {
         documentId: documentId,
-        members: { some: { id: userId } }
+        members: { some: { id: userId } },
       },
       include: {
         members: { select: { id: true, email: true, image: true } },
@@ -208,7 +204,7 @@ export async function listAllGroups(req, res) {
   try {
     const groups = await prisma.userGroup.findMany({
       where: {
-        members: { some: { id: userId } }
+        members: { some: { id: userId } },
       },
       include: {
         members: { select: { id: true, email: true, image: true } },
@@ -220,5 +216,26 @@ export async function listAllGroups(req, res) {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to list all groups" });
+  }
+}
+
+export async function getGroupById(req, res) {
+  const { groupId } = req.params;
+  try {
+    const group = await prisma.userGroup.findUnique({
+      where: { id: groupId },
+      include: {
+        members: true,
+        owner: true,
+        GroupMembership: { include: { user: true } },
+      },
+    });
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+    res.json(group);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch group" });
   }
 }
