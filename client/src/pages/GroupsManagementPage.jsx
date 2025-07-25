@@ -70,7 +70,7 @@ export default function GroupsManagementPage() {
   };
 
   const handleBackToDocument = () => {
-    navigate("/DocumentPage", { state: { documentId: documentId } });
+    navigate(`/documents/${documentId}`);
   };
 
   if (selectedGroup) {

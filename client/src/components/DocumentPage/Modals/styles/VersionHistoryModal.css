@@ -28,18 +28,19 @@
 .carousel-fade-left,
 .carousel-fade-right {
   position: absolute;
-  top: 0; bottom: 0;
+  top: 0;
+  bottom: 0;
   width: 34px;
   pointer-events: none;
   z-index: 2;
 }
 .carousel-fade-left {
   left: 0;
-  background: linear-gradient(to right, #fff 70%, rgba(255,255,255,0));
+  background: linear-gradient(to right, #fff 70%, rgba(255, 255, 255, 0));
 }
 .carousel-fade-right {
   right: 0;
-  background: linear-gradient(to left, #fff 70%, rgba(255,255,255,0));
+  background: linear-gradient(to left, #fff 70%, rgba(255, 255, 255, 0));
 }
 
 .carousel-item {
@@ -73,12 +74,12 @@
 .carousel-item.active {
   background: #e8f0fe;
   border-color: #4b52d9;
-  box-shadow: 0 6px 22px rgba(75, 82, 217, 0.10);
+  box-shadow: 0 6px 22px rgba(75, 82, 217, 0.1);
 }
 .carousel-item.current {
   background: #f1fbe9;
   border-color: #7fc47c;
-  box-shadow: 0 6px 22px rgba(39, 174, 96, 0.10);
+  box-shadow: 0 6px 22px rgba(39, 174, 96, 0.1);
 }
 
 .version-number {
@@ -117,7 +118,10 @@
   font-weight: 500;
   padding: 6px 13px;
   cursor: pointer;
-  transition: background 0.12s, color 0.13s, box-shadow 0.1s;
+  transition:
+    background 0.12s,
+    color 0.13s,
+    box-shadow 0.1s;
 }
 .btn-preview:hover:not(:disabled) {
   background: #e8eaed;
@@ -132,7 +136,9 @@
   font-weight: 500;
   padding: 6px 13px;
   cursor: pointer;
-  transition: background 0.12s, color 0.13s;
+  transition:
+    background 0.12s,
+    color 0.13s;
 }
 .revert-button:hover:not(:disabled) {
   background: #dde8fa;
@@ -209,8 +215,12 @@
 
 /* Animations */
 @keyframes spin {
-  0% { transform: rotate(0deg);}
-  100% { transform: rotate(360deg);}
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive tweaks */
