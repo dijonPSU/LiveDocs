@@ -18,3 +18,14 @@ export const documentRolesEnum = {
   VIEWER: "VIEWER",
   ADMIN: "ADMIN",
 };
+
+export const httpMethod = {
+  GET: "GET",
+  POST: "POST",
+  DELETE: "DELETE",
+  PATCH: "PATCH",
+};
+
+export const httpHeaders = { "Content-Type": "application/json" };
+
+export const baseURL = "http://localhost:3000";

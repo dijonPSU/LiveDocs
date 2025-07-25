@@ -1,15 +1,4 @@
-const httpMethod = {
-  GET: "GET",
-  POST: "POST",
-  DELETE: "DELETE",
-  PATCH: "PATCH",
-};
-
-const httpHeaders = {
-  "Content-Type": "application/json",
-};
-
-const baseURL = "http://localhost:3000";
+import { httpMethod, baseURL, httpHeaders } from "./constants";
 
 const getUserData = async (id = null) => {
   const URL = id ? `${baseURL}/users/${id}` : `${baseURL}/me`;
@@ -443,7 +432,6 @@ const getGroupById = async (groupId) => {
 };
 
 const summarizeDocument = async (docId, text) => {
-  console.log(text);
   const URL = `${baseURL}/documents/${docId}/summarize`;
 
   try {
@@ -455,9 +443,32 @@ const summarizeDocument = async (docId, text) => {
     });
     if (!response.ok) throw new Error("Failed to summarize document");
     return await response.json();
+
   } catch (error) {
     console.error("Cannot summarize document", error.message);
     return null;
+  }
+};
+
+const getRankedSuggestions = async (context, candidates) => {
+  const URL = `${baseURL}/rank`;
+
+  try {
+    const response = await fetch(URL, {
+      method: httpMethod.POST,
+      credentials: "include",
+      headers: httpHeaders,
+      body: JSON.stringify({ context, candidates }),
+    });
+    if (!response.ok) throw new Error("Failed to rank suggestions");
+
+    const rankedSuggestions = await response.json();
+    // return the top 3 suggestions
+    return rankedSuggestions.slice(0, 3);
+  } catch (error) {
+    console.error("Cannot rank suggestions", error.message);
+    // go with the original candidates if ranking fails
+    return candidates.slice(0, 3);
   }
 };
 
@@ -486,4 +497,5 @@ export {
   addGroupDocumentPermission,
   getGroupById,
   summarizeDocument,
+  getRankedSuggestions,
 };
