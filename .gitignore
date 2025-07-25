@@ -121,9 +121,35 @@ Thumbs.db
 # Linux
 *~
 
+# Python
+python_env/
+server/python_env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
 # Backup files
 *.bak
 *.backup
 *.old
 *.orig
 server/node_modules/.package-lock.json
+server/requirements.txt

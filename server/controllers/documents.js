@@ -697,3 +697,35 @@ export async function summarizeContent(req, res) {
       .json({ summary: "Error generating summary", error: error.message });
   }
 }
+
+
+/**
+ * Sends context and candidates to the ranking model and returns result
+ * @param {string} req.body.context - text context for autocomplete
+ * @param {string[]} req.body.candidates - Array of candidate completions
+ * @returns {Promise<void>} JSON with ranked suggestions
+ */
+
+export async function rankSuggestions(req, res) {
+  const { context, candidates } = req.body;
+
+  try {
+    const response = await fetch("http://localhost:5005/rank", {
+      method: httpMethods.POST,
+      headers: httpHeader,
+      body: JSON.stringify({
+        context,
+        candidates,
+      }),
+    });
+    if (!response.ok) throw new Error("KenLM service failed");
+
+    const rankedSuggestions = await response.json();
+    // Return the array directly, not wrapped in an object
+    res.json(rankedSuggestions);
+  } catch (error) {
+    console.error("Error ranking suggestions:", error.message);
+    // Return original candidates as fallback
+    res.status(500).json(candidates);
+  }
+}
