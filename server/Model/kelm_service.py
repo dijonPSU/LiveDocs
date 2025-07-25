@@ -2,14 +2,13 @@ from flask import Flask, request, jsonify
 import kenlm
 
 # Load trained kenlm model
-model = kenlm.Model('/Users/dijonmiller/meta-codepath/LiveDocs/server/Model/my_wikitext3.arpa')
+model = kenlm.Model('/Users/dijonmiller/meta-codepath/LiveDocs/server/RankingModel/my_wikitext3.arpa')
 
 
 def score_suggestion(context, suggestion):
-"""
-    Calculates the conditional log-probability of the suggestion given the context using KenLM
-    Higher score = more likely suggestion given the previous words (context)
-"""
+    #Calculates the conditional log-probability of the suggestion given the context using KenLM
+    #Higher score = more likely suggestion given the previous words (context)
+
     context = context.strip()
     full = f"{context} {suggestion}".strip()
 

@@ -35,7 +35,6 @@ class Trie {
   getCompletions(prefix, limit = 10) {
     let node = this.root;
 
-
     for (const char of prefix.toLowerCase()) {
       if (!node.children[char]) {
         return []; // No words found with this prefix
@@ -49,7 +48,7 @@ class Trie {
   }
 
   /**
-   * Basic DFS helper to collect words from the Trie
+   * DFS helper to collect words from the Trie
    * @param {TrieNode} node - Current Trie node
    * @param {string} prefix - Accumulated prefix so far
    * @param {string[]} results - Collected results
@@ -58,7 +57,7 @@ class Trie {
 
   _dfs(node, prefix, results, limit) {
     if (results.length >= limit) return;
-    if (node.isEndOfWord){
+    if (node.isEndOfWord) {
       // If word ends here, add to results
       results.push(prefix);
     }

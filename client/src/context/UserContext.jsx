@@ -4,7 +4,7 @@ import { getUserData } from "../utils/dataFetcher.js";
 // eslint-disable-next-line react-refresh/only-export-components
 export const UserContext = createContext();
 
-export const UserProvider = ({ children }) => {
+export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,4 +22,4 @@ export const UserProvider = ({ children }) => {
       {children}
     </UserContext.Provider>
   );
-};
+}
