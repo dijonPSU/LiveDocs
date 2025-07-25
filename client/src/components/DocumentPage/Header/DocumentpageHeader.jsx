@@ -9,6 +9,7 @@ export default function DocumentHeader({
   navigate,
   openShareModal,
   openVersionModal,
+  openSummaryModal,
   user,
   loading,
   collaboratorProfiles,
@@ -69,6 +70,12 @@ export default function DocumentHeader({
           onClick={openShareModal}
         >
           Share
+        </button>
+        <button
+          className="document-button summarize-button"
+          onClick={openSummaryModal}
+        >
+          Summarize
         </button>
         <div className="user-avatar">
           {loading ? (
