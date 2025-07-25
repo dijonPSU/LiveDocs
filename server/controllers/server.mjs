@@ -20,6 +20,7 @@ import {
   getVersionContent,
   updateCollaboratorRole,
   getUserRole,
+  summarizeContent,
 } from "./documents.js";
 
 import {
@@ -110,6 +111,7 @@ app.post("/documents/:id/revert", revertVersion);
 app.post("/groups", createGroup);
 app.post("/groups/:groupId/members", addGroupMember);
 app.post("/documents/:docId/permissions/group", addGroupPermission);
+app.post("/documents/:docId/summarize", summarizeContent);
 
 app.put("/documents/:id/snapshot", updateSnapshot);
 

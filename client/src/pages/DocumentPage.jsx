@@ -12,6 +12,7 @@ import {
 } from "../utils/constants";
 import ShareDocumentModal from "../components/DocumentPage/Modals/ShareDocumentModal";
 import VersionHistoryModal from "../components/DocumentPage/Modals/VersionHistoryModal";
+import SummaryModal from "../components/DocumentPage/Modals/SummaryModal";
 import DocumentHeader from "../components/DocumentPage/Header/DocumentpageHeader";
 import ActiveCollaborators from "../components/DocumentPage/Header/ActiveCollaborators";
 import {
@@ -37,6 +38,7 @@ export default function DocumentPage() {
 
   const [showShareModal, setShowShareModal] = useState(false);
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [saveStatus, setSaveStatus] = useState(saveStatusEnum.SAVED);
   const [collaboratorProfiles, setCollaboratorProfiles] = useState([]);
   const [remoteCursors, setRemoteCursors] = useState({});
@@ -288,6 +290,10 @@ export default function DocumentPage() {
     setShowVersionHistoryModal(true);
   };
 
+  const handleSummaryModal = () => {
+    setShowSummaryModal(true);
+  };
+
   const handleStartPreview = async (version) => {
     if (!quillRef.current) return;
 
@@ -333,6 +339,7 @@ export default function DocumentPage() {
         navigate={navigate}
         openShareModal={() => handleShareModal()}
         openVersionModal={() => handlerVersionHistoryModal()}
+        openSummaryModal={() => handleSummaryModal()}
         user={user}
         loading={loading}
         collaboratorProfiles={
@@ -372,6 +379,13 @@ export default function DocumentPage() {
           onClose={() => setShowVersionHistoryModal(false)}
           quillRef={quillRef}
           onStartPreview={handleStartPreview}
+        />
+      )}
+      {showSummaryModal && (
+        <SummaryModal
+          closeModal={() => setShowSummaryModal(false)}
+          documentId={documentId}
+          quillRef={quillRef}
         />
       )}
     </div>

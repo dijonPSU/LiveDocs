@@ -442,6 +442,25 @@ const getGroupById = async (groupId) => {
   }
 };
 
+const summarizeDocument = async (docId, text) => {
+  console.log(text);
+  const URL = `${baseURL}/documents/${docId}/summarize`;
+
+  try {
+    const response = await fetch(URL, {
+      method: httpMethod.POST,
+      credentials: "include",
+      headers: httpHeaders,
+      body: JSON.stringify({ text }),
+    });
+    if (!response.ok) throw new Error("Failed to summarize document");
+    return await response.json();
+  } catch (error) {
+    console.error("Cannot summarize document", error.message);
+    return null;
+  }
+};
+
 export {
   getUserData,
   getUserDocuments,
@@ -466,4 +485,5 @@ export {
   deleteGroup,
   addGroupDocumentPermission,
   getGroupById,
+  summarizeDocument,
 };

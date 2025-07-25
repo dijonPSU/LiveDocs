@@ -1,5 +1,7 @@
 import { PrismaClient } from "../generated/prisma/client.js";
 import { sendEmail } from "./emailService.js";
+import fetch from "node-fetch";
+import { httpMethods, httpHeader } from "./helper-functions/constants.js";
 import {
   getUserGroupIds,
   getHighestRole,
@@ -662,5 +664,36 @@ export async function getUserRole(req, res) {
   } catch (err) {
     console.error(`[getUserRole]`, err);
     return res.status(500).json({ message: "Failed to get user role" });
+  }
+}
+
+/**
+ * Summarizes the provided document text using the Gemini API
+ * @param {string} req.body.text - Text content of the document to summarize
+ * @returns {Promise<void>} JSON object with a summary of the document
+ * @description Calls the Gemini API with the given document text and returns the generated summary
+ */
+export async function summarizeContent(req, res) {
+  const { text } = req.body;
+
+  try {
+    const response = await fetch(process.env.GEMINI_URL, {
+      method: httpMethods.POST,
+      headers: httpHeader,
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `Summarize this document: ${text}` }] }],
+      }),
+    });
+
+    const geminiData = await response.json();
+    const summary =
+      geminiData.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "No summary generated.";
+
+    res.json({ summary });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ summary: "Error generating summary", error: error.message });
   }
 }

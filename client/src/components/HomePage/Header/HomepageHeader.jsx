@@ -2,10 +2,12 @@ import "./styleHeader.css";
 import { useState } from "react";
 import HomepageProfileModal from "../Modals/HomepageProfileModal";
 import { useUser } from "../../../hooks/useUser";
+import { useSearch } from "../../../context/SearchContext";
 
 const Header = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileModalPosition, setProfileModalPosition] = useState(null);
+  const { searchQuery, setSearchQuery } = useSearch();
   const { user } = useUser();
 
   const closeProfileModal = () => {
@@ -31,7 +33,12 @@ const Header = () => {
         <div className="header-actions">
           <div className="search-container">
             <span className="search-icon">🔍</span>
-            <input className="search-input" placeholder="Search" />
+            <input
+              className="search-input"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <div className="header-buttons">
             <button
