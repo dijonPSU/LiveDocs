@@ -1,364 +1,231 @@
 import { createServer } from "http";
-import crypto from "crypto";
+import {
+  WEBSOCKET_MAGIC_STRING,
+  PAYLOAD_LENGTH_16BIT,
+  PAYLOAD_LENGTH_64BIT,
+  MASK_KEY_LENGTH,
+  OPCODE_TEXT,
+  messageActionEnum,
+} from "./constants.js";
+import { createAcceptKey, unmask, sendFrame } from "./helpers/frameUtils.js";
+import {
+  joinRoom,
+  leaveRoom,
+  sendToRoom,
+  sendToUser,
+} from "./helpers/roomUtils.js";
 
-const PORT = 8080;
+export default class WebSocketServer {
+  constructor(port) {
+    this.rooms = new Map(); // Map of room names to sets of connected sockets
+    this.userSockets = new Map(); // Map of user IDs to sets of their socket connections
 
-const rooms = new Map();
-const userSockets = new Map();
+    // Create HTTP server that upgrades to WebSocket
+    this.server = createServer((_req, res) => {
+      res.writeHead(200);
+      res.end("WebSocket Server");
+    }).listen(port, () => {
+      console.log(`WebSocket server running on port ${port}`);
+    });
 
-// -- websocket constants --
-const WEBSOCKET_MAGIC_STRING = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-const MASK_KEY_LENGTH = 4;
-const OPCODE_TEXT = 0x1;
-const FIN_BIT = 0x80;
-const MAX_PAYLOAD_LENGTH_7BIT = 125;
-const PAYLOAD_LENGTH_16BIT = 126;
-const MAX_PAYLOAD_LENGTH_16BIT = 65535;
-const PAYLOAD_LENGTH_64BIT = 127;
-
-const messageActionEnum = {
-  JOIN: "join",
-  LEAVE: "leave",
-  SEND: "send",
-  CLIENTLIST: "clientList",
-  IDENTIFY: "identify",
-  NOTIFICATION: "notification",
-  CURSOR: "cursor",
-};
-
-// -- server --
-const server = createServer((req, res) => {
-  res.writeHead(200);
-  res.end("Test Server");
-}).listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-server.on("upgrade", onSocketUpgrade);
-
-// error handling
-["uncaughtException", "unhandledRejection"].forEach((eventType) => {
-  process.on(eventType, (err) => {
-    console.error(`Error caught: ${err.stack || err}`);
-  });
-});
-
-// -- functions --
-function onSocketUpgrade(req, socket) {
-  const clientKey = req.headers["sec-websocket-key"];
-  if (!clientKey) {
-    socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
-    socket.destroy();
-    return;
+    this.server.on("upgrade", this.onSocketUpgrade.bind(this));
   }
 
-  // respond to handshake
-  const acceptKey = createAcceptKey(clientKey);
-  const responseHeaders = [
-    "HTTP/1.1 101 Switching Protocols",
-    "Upgrade: websocket",
-    "Connection: Upgrade",
-    `Sec-WebSocket-Accept: ${acceptKey}`,
-    "\r\n",
-  ].join("\r\n");
-  socket.write(responseHeaders);
+  // Handles HTTP upgrade to WebSocket protocol
+  onSocketUpgrade(req, socket) {
+    const clientKey = req.headers["sec-websocket-key"];
+    if (!clientKey) return socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
 
-  // buffer incoming data here
-  socket._buffer = Buffer.alloc(0);
+    const acceptKey = createAcceptKey(clientKey, WEBSOCKET_MAGIC_STRING);
+    socket.write(
+      [
+        "HTTP/1.1 101 Switching Protocols",
+        "Upgrade: websocket",
+        "Connection: Upgrade",
+        `Sec-WebSocket-Accept: ${acceptKey}`,
+        "\r\n",
+      ].join("\r\n"),
+    );
 
-  socket.on("data", (data) => {
-    socket._buffer = Buffer.concat([socket._buffer, data]);
-    processBuffer(socket);
-  });
+    socket._buffer = Buffer.alloc(0);
+    socket.rooms = new Set();
 
-  socket.on("error", (err) => {
-    console.error("Socket error:", err);
-  });
+    socket.on("data", (data) => {
+      socket._buffer = Buffer.concat([socket._buffer, data]);
+      this.processBuffer(socket);
+    });
 
-  socket.on("end", () => {
-    console.log("Client disconnected");
+    socket.on("end", () => this.cleanup(socket));
+    socket.on("error", (err) => console.error("[Socket error]", err));
+  }
 
-    if (socket.rooms) {
-      socket.rooms.forEach((roomName) => {
-        leaveRoom(socket, roomName);
-      });
-      socket.rooms.clear();
-      socket.rooms = null;
+  /**
+   * Cleanup function when a socket disconnects
+
+   */
+  cleanup(socket) {
+    // Remove socket from all rooms and notify other room members
+    socket.rooms?.forEach((room) =>
+      leaveRoom(this.rooms, socket, room, this.sendToRoom.bind(this)),
+    );
+
+    if (socket.id && this.userSockets.has(socket.id)) {
+      const conns = this.userSockets.get(socket.id);
+      conns.delete(socket);
+      // Remove user entry if no more connections exist
+      if (conns.size === 0) this.userSockets.delete(socket.id);
     }
-    if (socket.id && userSockets.has(socket.id)) {
-      userSockets.get(socket.id).delete(socket);
-      if (userSockets.get(socket.id).size === 0) {
-        userSockets.delete(socket.id);
+  }
+
+  /**
+   * Parses and processes buffered WebSocket frames
+   * @param {net.Socket} socket -  Socket containing buffered frame data
+   */
+  processBuffer(socket) {
+    let buffer = socket._buffer;
+    while (buffer.length >= 2) {
+      // Parse frame header
+      const firstByte = buffer[0];
+      const secondByte = buffer[1];
+      const opcode = firstByte & 0x0f;
+      const masked = (secondByte & 0x80) !== 0;
+      let payloadLength = secondByte & 0x7f;
+      let offset = 2;
+
+      // Handle extended payload lengths
+      if (payloadLength === PAYLOAD_LENGTH_16BIT) {
+        // 16-bit extended length
+        if (buffer.length < offset + 2) break;
+        payloadLength = buffer.readUInt16BE(offset);
+        offset += 2;
+      } else if (payloadLength === PAYLOAD_LENGTH_64BIT){
+        socket.destroy();
+        console.error("64-bit length not supported");
+        return;
       }
-    }
-  });
-}
 
-function createAcceptKey(key) {
-  return crypto
-    .createHash("sha1")
-    .update(key + WEBSOCKET_MAGIC_STRING)
-    .digest("base64");
-}
 
-// process dataFrame Buffer
-function processBuffer(socket) {
-  let buffer = socket._buffer;
-  while (true) {
-    if (buffer.length < 2) return; // need at least 2 bytes to read header
 
-    const firstByte = buffer[0];
-    const secondByte = buffer[1];
+      const totalLength =
+        offset + (masked ? MASK_KEY_LENGTH : 0) + payloadLength;
+      if (buffer.length < totalLength) break; // Wait for complete frame
 
-    const fin = (firstByte & 0x80) !== 0;
-    const opcode = firstByte & 0x0f;
-    const masked = (secondByte & 0x80) !== 0;
-    let payloadLength = secondByte & 0x7f;
+      // Extract masking key if present
+      const maskingKey = masked
+        ? buffer.slice(offset, offset + MASK_KEY_LENGTH)
+        : null;
+      offset += masked ? MASK_KEY_LENGTH : 0;
 
-    let offset = 2;
+      // Extract and unmask payload
+      let payload = buffer.slice(offset, offset + payloadLength);
+      if (masked) payload = unmask(payload, maskingKey);
 
-    if (payloadLength === PAYLOAD_LENGTH_16BIT) {
-      if (buffer.length < offset + 2) return;
-      payloadLength = buffer.readUInt16BE(offset);
-      offset += 2;
-    } else if (payloadLength === PAYLOAD_LENGTH_64BIT) {
-      socket.destroy();
-      console.error("64-bit length not supported right now");
-      return;
+      // Process the complete frame
+      this.handleFrame(socket, opcode, payload.toString("utf8").trim());
+
+      // Remove processed frame from buffer
+      buffer = buffer.slice(totalLength);
     }
 
-    const totalLength = offset + (masked ? MASK_KEY_LENGTH : 0) + payloadLength;
-    if (buffer.length < totalLength) return; // wait for full data
-
-    let payloadStart = offset;
-    let maskingKey;
-
-    if (masked) {
-      maskingKey = buffer.slice(offset, offset + MASK_KEY_LENGTH);
-      payloadStart += MASK_KEY_LENGTH;
-    }
-
-    let payloadData = buffer.slice(payloadStart, payloadStart + payloadLength);
-
-    if (masked) {
-      payloadData = unmask(payloadData, maskingKey);
-    }
-
-    handleFrame(socket, opcode, payloadData, fin);
-
-    // get rid of processed frame
-    buffer = buffer.slice(totalLength);
+    // Update socket buffer with remaining data
     socket._buffer = buffer;
   }
-}
 
-function unmask(buffer, mask) {
-  // XOR the data with the mask key to decode it
-  // i % MASK_KEY_LENGTH is to ensure we don't go out of bounds. should only be 0, 1, 2, 3
-  const result = Buffer.alloc(buffer.length);
-  for (let i = 0; i < buffer.length; i++) {
-    result[i] = buffer[i] ^ mask[i % MASK_KEY_LENGTH];
-  }
-  return result;
-}
+  handleFrame(socket, opcode, message) {
+    // Only process text frames
+    if (opcode !== OPCODE_TEXT) return;
 
-function handleFrame(socket, opcode, data) {
-  const OPCODE_CLOSE = 0x8;
-  const OPCODE_PING = 0x9;
-  const OPCODE_PONG = 0xa;
+    try {
+      const json = JSON.parse(message);
+      const { action, userId, roomName, message: msg, reset = false } = json;
 
-  switch (opcode) {
-    case OPCODE_CLOSE: // Close frame
-      socket.end();
-      break;
+      switch (action) {
+        case messageActionEnum.IDENTIFY:
+          if (userId) {
+            socket.id = userId;
+            if (!this.userSockets.has(userId))
+              this.userSockets.set(userId, new Set());
+            this.userSockets.get(userId).add(socket);
+          }
+          break;
 
-    case OPCODE_PING: // Ping frame
-      // Respond with Pong
-      sendFrame(socket, 0xa, data);
-      break;
+        case messageActionEnum.JOIN:
+          // Add socket to room
+          joinRoom(this.rooms, socket, roomName, this.sendToRoom.bind(this));
+          break;
 
-    case OPCODE_PONG: // Pong frame
-      break;
+        case messageActionEnum.LEAVE:
+          // Remove socket from room
+          leaveRoom(this.rooms, socket, roomName, this.sendToRoom.bind(this));
+          break;
 
-    case OPCODE_TEXT: {
-      const message = data.toString("utf8").trim();
-
-      try {
-        const jsonData = JSON.parse(message);
-        const {
-          action,
-          userId,
-          roomName,
-          message: msg,
-          reset = false,
-        } = jsonData;
-
-        switch (action) {
-          case messageActionEnum.IDENTIFY:
-            if (userId) {
-              socket.id = userId;
-              if (!userSockets.has(userId)) userSockets.set(userId, new Set());
-              userSockets.get(userId).add(socket);
-              console.log(`User ${userId} identified`);
-            }
-            break;
-          case messageActionEnum.JOIN:
-            joinRoom(socket, roomName);
-            break;
-          case messageActionEnum.LEAVE:
-            leaveRoom(socket, roomName);
-            break;
-          case messageActionEnum.SEND:
-            if (roomName) {
-              sendToRoom(
-                socket,
+        case messageActionEnum.SEND:
+          // Broadcast message to room members
+          if (roomName) {
+            sendToRoom(
+              this.rooms,
+              socket,
+              roomName,
+              JSON.stringify({
+                action: messageActionEnum.SEND,
+                from: socket.id,
                 roomName,
-                JSON.stringify({
-                  action: messageActionEnum.SEND,
-                  from: socket.id,
-                  roomName,
-                  message: msg,
-                  reset: reset,
-                }),
-                false,
-              );
-            } else {
-              console.log("No room specified");
-            }
-            break;
-          case messageActionEnum.NOTIFICATION:
-            sendToUser(jsonData.userId, {
-              action: messageActionEnum.NOTIFICATION,
-              message: jsonData.message,
-              documentId: jsonData.documentId,
-            });
-            break;
-          case messageActionEnum.CURSOR:
-            if (roomName && userId && jsonData.range) {
-              sendToRoom(
-                socket,
-                roomName,
-                JSON.stringify({
-                  action: messageActionEnum.CURSOR,
-                  userId,
-                  range: jsonData.range,
-                  userInfo: jsonData.userInfo || {},
-                }),
-                false,
-              );
-            }
-            break;
+                message: msg,
+                reset,
+              }),
+            );
+          }
+          break;
 
-          default:
-            return;
-        }
-      } catch {
-        const errResp = JSON.stringify({
-          error: "Invalid JSON format",
-          originalMessage: message,
-        });
-        sendFrame(socket, OPCODE_TEXT, Buffer.from(errResp));
+        case messageActionEnum.NOTIFICATION:
+          // Send direct notification to specific user
+          sendToUser(this.userSockets, json.userId, {
+            action: messageActionEnum.NOTIFICATION,
+            message: json.message,
+            documentId: json.documentId,
+          });
+          break;
+
+        case messageActionEnum.CURSOR:
+          // Share cursor position
+          if (roomName && userId && json.range) {
+            sendToRoom(
+              this.rooms,
+              socket,
+              roomName,
+              JSON.stringify({
+                action: messageActionEnum.CURSOR,
+                userId,
+                range: json.range,
+                userInfo: json.userInfo || {},
+              }),
+            );
+          }
+          break;
       }
-      break;
-    }
-    default:
-      break;
-  }
-}
-
-// send dataframes
-function sendFrame(socket, opcode, payload) {
-  const payloadLength = payload.length;
-  let header;
-
-  const finAndOpcode = FIN_BIT | opcode;
-
-  if (payloadLength <= MAX_PAYLOAD_LENGTH_7BIT) {
-    header = Buffer.alloc(2);
-    header[0] = finAndOpcode;
-    header[1] = payloadLength;
-  } else if (payloadLength <= MAX_PAYLOAD_LENGTH_16BIT) {
-    header = Buffer.alloc(4);
-    header[0] = finAndOpcode;
-    header[1] = PAYLOAD_LENGTH_16BIT;
-    header.writeUInt16BE(payloadLength, 2);
-  } else {
-    // may add larger message support later
-    console.error("Message too large to send");
-    return;
-  }
-
-  const frame = Buffer.concat([header, payload]);
-  socket.write(frame);
-}
-
-function joinRoom(client, roomName) {
-  if (!rooms.has(roomName)) {
-    rooms.set(roomName, new Set());
-  }
-
-  rooms.get(roomName).add(client);
-
-  if (!client.rooms) {
-    client.rooms = new Set();
-  }
-
-  const clientsInRoom = Array.from(rooms.get(roomName)).map((c) => c.id);
-
-  const clientListMessage = {
-    action: messageActionEnum.CLIENTLIST,
-    roomName,
-    clients: clientsInRoom,
-  };
-
-  sendToRoom(client, roomName, JSON.stringify(clientListMessage), true);
-
-  client.rooms.add(roomName);
-}
-
-function leaveRoom(client, roomName) {
-  if (rooms.has(roomName)) {
-    rooms.get(roomName).delete(client);
-    if (rooms.get(roomName).size === 0) {
-      rooms.delete(roomName);
-    } else {
-      const updatedClients = Array.from(rooms.get(roomName)).map((c) => c.id);
-      const clientListMessage = {
-        action: messageActionEnum.CLIENTLIST,
-        roomName,
-        clients: updatedClients,
-      };
-      sendToRoom(client, roomName, JSON.stringify(clientListMessage), true);
+    } catch {
+      // Send error response for invalid JSON
+      sendFrame(
+        socket,
+        OPCODE_TEXT,
+        Buffer.from(
+          JSON.stringify({
+            error: "Invalid JSON",
+            originalMessage: message,
+          }),
+        ),
+      );
     }
   }
 
-  if (client.rooms) {
-    client.rooms.delete(roomName);
+  /**
+   * Sends a message to all members of a specific room
+   * @param {net.Socket} sender - The socket that is sending the message
+   * @param {string} roomName - The name of the room to send the message to
+   * @param {string} message - The message content to broadcast (should be JSON string)
+   * @param {boolean} [includeSender=false] - Whether to include the sender in the broadcast
+   */
+  sendToRoom(sender, roomName, message, includeSender = false) {
+    sendToRoom(this.rooms, sender, roomName, message, includeSender);
   }
-}
-
-function sendToRoom(roomClient, roomName, message, includeSender = false) {
-  if (rooms.has(roomName)) {
-    const roomToBroadcast = rooms.get(roomName);
-    roomToBroadcast.forEach((client) => {
-      if (includeSender || client !== roomClient) {
-        sendFrame(client, OPCODE_TEXT, Buffer.from(message));
-      }
-    });
-  } else {
-    sendFrame(
-      roomClient,
-      OPCODE_TEXT,
-      Buffer.from(`Room ${roomName} does not exist`),
-    );
-  }
-}
-
-export function sendToUser(userId, messageObj) {
-  const sockets = userSockets.get(userId);
-  if (!sockets) return;
-  const msgStr = JSON.stringify(messageObj);
-  sockets.forEach((socket) => {
-    sendFrame(socket, OPCODE_TEXT, Buffer.from(msgStr));
-  });
 }
