@@ -1,22 +1,24 @@
 import { useEffect, useState, useRef } from "react";
 import Delta from "quill-delta";
-import {
-  getVersions,
-  revertToVersion,
-} from "../../../utils/dataFetcher";
+import { getVersions, revertToVersion } from "../../../utils/dataFetcher";
 import { useUser } from "../../../hooks/useUser";
 import useWebSocket from "../../../hooks/useWebsocket";
 import { dataActionEnum } from "../../../utils/constants";
 import "./styles/VersionHistoryModal.css";
 
-export default function VersionHistoryModal({ documentID, onClose, quillRef, onStartPreview }) {
+export default function VersionHistoryModal({
+  documentID,
+  onClose,
+  quillRef,
+  onStartPreview,
+}) {
   const { user } = useUser();
   const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isReverting, setIsReverting] = useState(false);
   const [error, setError] = useState(null);
   const [currentVersionNumber, setCurrentVersionNumber] = useState(null);
-  const { sendMessage } = useWebSocket(() => { }, user);
+  const { sendMessage } = useWebSocket(() => {}, user);
   const carouselRef = useRef();
 
   // Fetch versions
@@ -39,7 +41,6 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef, onS
     }
     fetchVersions();
   }, [documentID]);
-
 
   async function handleRevert(versionNumber) {
     setIsReverting(true);
@@ -108,7 +109,9 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef, onS
 
     const handleScroll = () => {
       setShowFadeLeft(track.scrollLeft > 0);
-      setShowFadeRight(track.scrollLeft + track.offsetWidth < track.scrollWidth - 1);
+      setShowFadeRight(
+        track.scrollLeft + track.offsetWidth < track.scrollWidth - 1,
+      );
     };
     handleScroll();
     track.addEventListener("scroll", handleScroll);
@@ -149,7 +152,10 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef, onS
 
           {!loading && !error && versions.length > 0 && (
             <>
-              <div className="version-carousel" style={{ position: "relative", width: "100%" }}>
+              <div
+                className="version-carousel"
+                style={{ position: "relative", width: "100%" }}
+              >
                 {showFadeLeft && <div className="carousel-fade-left"></div>}
                 <div className="carousel-track no-arrows" ref={carouselRef}>
                   {versions.map((version) => (
@@ -157,13 +163,18 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef, onS
                       key={version.versionNumber}
                       className={[
                         "carousel-item",
-                        version.versionNumber === currentVersionNumber && "current",
-                      ].filter(Boolean).join(" ")}
+                        version.versionNumber === currentVersionNumber &&
+                          "current",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
                     >
                       <div className="version-number">
                         <b>Version #{version.versionNumber}</b>
                         {version.versionNumber === currentVersionNumber && (
-                          <span className="current-version-label">(Current)</span>
+                          <span className="current-version-label">
+                            (Current)
+                          </span>
                         )}
                       </div>
                       <div className="carousel-meta">
@@ -194,7 +205,9 @@ export default function VersionHistoryModal({ documentID, onClose, quillRef, onS
                 {versions.map((_, idx) => (
                   <span
                     key={idx}
-                    className={"carousel-dot" + (activeDotIdx === idx ? " active" : "")}
+                    className={
+                      "carousel-dot" + (activeDotIdx === idx ? " active" : "")
+                    }
                   />
                 ))}
               </div>
