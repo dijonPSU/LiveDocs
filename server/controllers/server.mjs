@@ -21,6 +21,7 @@ import {
   updateCollaboratorRole,
   getUserRole,
   summarizeContent,
+  rankSuggestions,
 } from "./documents.js";
 
 import {
@@ -112,6 +113,7 @@ app.post("/groups", createGroup);
 app.post("/groups/:groupId/members", addGroupMember);
 app.post("/documents/:docId/permissions/group", addGroupPermission);
 app.post("/documents/:docId/summarize", summarizeContent);
+app.post("/rank", rankSuggestions);
 
 app.put("/documents/:id/snapshot", updateSnapshot);
 
