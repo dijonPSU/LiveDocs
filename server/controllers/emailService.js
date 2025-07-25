@@ -1,5 +1,9 @@
 import nodemailer from "nodemailer";
 
+/**
+ * Nodemailer transporter configured for Gmail SMTP
+ * @type {Object}
+ */
 export const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -7,6 +11,15 @@ export const transporter = nodemailer.createTransport({
     pass: "twzo ybka qogt vwxd",
   },
 });
+
+/**
+ * Sends a document sharing notification email
+ * @param {string} params.to - Recipient email address
+ * @param {string} params.fromUser - Email of user sharing the document
+ * @param {string} params.docTitle - Title of the shared document
+ * @param {string} params._shareUrl - Share URL (currently unused parameter)
+ * @returns {Promise<Object>} Promise resolving to email send result
+ */
 
 export const sendEmail = async ({ to, fromUser, docTitle, _shareUrl }) => {
   return transporter.sendMail({
