@@ -69,8 +69,11 @@ export default function DocumentOptionsModal({
               ? "Deleting..."
               : "Remove"}
         </button>
-
-        <button>Open In New Tab</button>
+        <button
+          onClick={() => window.open(`/documents/${documentId}`, "_blank")}
+        >
+          Open In New Tab
+        </button>
       </div>
     </div>
   );
