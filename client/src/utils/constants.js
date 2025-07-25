@@ -26,6 +26,13 @@ export const httpMethod = {
   PATCH: "PATCH",
 };
 
+export const keyBoardCommands = {
+  DOWN: "ArrowDown",
+  UP: "ArrowUp",
+  ENTER: "Enter",
+  TAB: "Tab",
+  ESCAPE: "Escape",
+};
 export const httpHeaders = { "Content-Type": "application/json" };
 
 export const baseURL = "http://localhost:3000";

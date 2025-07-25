@@ -443,14 +443,13 @@ const summarizeDocument = async (docId, text) => {
     });
     if (!response.ok) throw new Error("Failed to summarize document");
     return await response.json();
-
   } catch (error) {
     console.error("Cannot summarize document", error.message);
     return null;
   }
 };
 
-const getRankedSuggestions = async (context, candidates) => {
+const getRankedSuggestions = async (context, suggestions) => {
   const URL = `${baseURL}/rank`;
 
   try {
@@ -458,17 +457,24 @@ const getRankedSuggestions = async (context, candidates) => {
       method: httpMethod.POST,
       credentials: "include",
       headers: httpHeaders,
-      body: JSON.stringify({ context, candidates }),
+      body: JSON.stringify({ context, suggestions }),
     });
+
     if (!response.ok) throw new Error("Failed to rank suggestions");
 
     const rankedSuggestions = await response.json();
+
+    // If ranking service returns empty array use the original suggestions
+    if (!rankedSuggestions || rankedSuggestions.length === 0) {
+      return suggestions.slice(0, 3);
+    }
+
     // return the top 3 suggestions
     return rankedSuggestions.slice(0, 3);
   } catch (error) {
     console.error("Cannot rank suggestions", error.message);
-    // go with the original candidates if ranking fails
-    return candidates.slice(0, 3);
+    // go with the original suggestions if ranking fails
+    return suggestions.slice(0, 3);
   }
 };
 

@@ -142,9 +142,6 @@ export default function GroupsManagementPage() {
               <p>
                 Create your first group to start organizing your collaborators
               </p>
-              <button className="btn btn-primary" onClick={handleCreateGroup}>
-                Create Your First Group
-              </button>
             </div>
           ) : (
             <div className="groups-grid">

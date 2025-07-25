@@ -23,17 +23,13 @@ export function levenshtein(a, b, maxDistance = Infinity) {
   for (let j = 1; j <= b.length; j++) {
     curr[0] = j;
 
-     // Track the minimum in the current row for early exit
+    // Track the minimum in the current row for early exit
     let minInRow = curr[0];
 
     for (let i = 1; i <= a.length; i++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
       // Compute the minimum cost of insertion, deletion, or substitution
-      curr[i] = Math.min(
-        prev[i] + 1,
-        curr[i - 1] + 1,
-        prev[i - 1] + cost
-      );
+      curr[i] = Math.min(prev[i] + 1, curr[i - 1] + 1, prev[i - 1] + cost);
       minInRow = Math.min(minInRow, curr[i]);
     }
     // Early exit if minimum value in row exceeds maxDistance

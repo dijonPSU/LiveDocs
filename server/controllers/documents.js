@@ -698,7 +698,6 @@ export async function summarizeContent(req, res) {
   }
 }
 
-
 /**
  * Sends context and candidates to the ranking model and returns result
  * @param {string} req.body.context - text context for autocomplete
