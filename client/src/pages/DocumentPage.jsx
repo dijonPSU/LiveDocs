@@ -20,6 +20,7 @@ import {
   savePatch,
   updateDocumentTitle,
   getUserRole,
+  getVersionContent,
 } from "../utils/dataFetcher";
 import { computeDeltaDiff } from "../hooks/deltaAlgo";
 import { getColorForUser } from "../utils/helpers";
@@ -42,6 +43,9 @@ export default function DocumentPage() {
   const [collaboratorProfiles, setCollaboratorProfiles] = useState([]);
   const [remoteCursors, setRemoteCursors] = useState({});
   const [userRole, setUserRole] = useState(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [originalContent, setOriginalContent] = useState(null);
+  const [previewVersion, setPreviewVersion] = useState(null);
   const lastSavedDeltaRef = useRef(new Delta());
   const lastSelectionRef = useRef(null);
 
@@ -284,6 +288,38 @@ export default function DocumentPage() {
     setShowVersionHistoryModal(true);
   };
 
+  const handleStartPreview = async (version) => {
+    if (!quillRef.current) return;
+
+    try {
+      // Store original content before preview
+      setOriginalContent(quillRef.current.getContents());
+
+      // Fetch and load the version content
+      const versionContent = await getVersionContent(documentId, version.versionNumber);
+      if (versionContent) {
+        quillRef.current.setContents(new Delta(versionContent));
+      }
+
+      setPreviewVersion(version);
+      setIsPreviewMode(true);
+      setShowVersionHistoryModal(false);
+    } catch (error) {
+      // TODO: Add toast error handling
+      console.error("Failed to load version content for preview:", error);
+    }
+  };
+
+  const handleStopPreview = () => {
+    if (!quillRef.current || !originalContent) return;
+
+    // Restore original content
+    quillRef.current.setContents(originalContent);
+    setIsPreviewMode(false);
+    setPreviewVersion(null);
+    setOriginalContent(null);
+  };
+
   return (
     <div className="document-page">
       <DocumentHeader
@@ -301,6 +337,17 @@ export default function DocumentPage() {
         }
         userRole={userRole}
       />
+      {isPreviewMode && (
+        <div className="preview-banner">
+          <div className="preview-info">
+            <span className="preview-label">Previewing Version #{previewVersion?.versionNumber}</span>
+            <span className="preview-description">You are viewing a previous version of this document</span>
+          </div>
+          <button className="btn-stop-preview" onClick={handleStopPreview}>
+            Stop Preview
+          </button>
+        </div>
+      )}
       <div className="document-content">
         <div className="editor-container">
           <div ref={editorRef}></div>
@@ -317,6 +364,7 @@ export default function DocumentPage() {
           documentID={documentId}
           onClose={() => setShowVersionHistoryModal(false)}
           quillRef={quillRef}
+          onStartPreview={handleStartPreview}
         />
       )}
     </div>
