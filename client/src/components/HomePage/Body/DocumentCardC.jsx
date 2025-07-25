@@ -6,9 +6,7 @@ export default function DocumentCard({ doc, onEditClick }) {
   const navigate = useNavigate();
 
   const handleDocumentCardClick = () => {
-    navigate("/DocumentPage", {
-      state: { documentId: doc.id, documentName: doc.title },
-    });
+    navigate(`/documents/${doc.id}`);
   };
 
   return (
