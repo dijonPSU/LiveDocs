@@ -4,7 +4,8 @@ import { useUser } from "../hooks/useUser";
 import { useWS } from "../context/WebsocketContext";
 import useQuillEditor from "../hooks/useQuill";
 import useDebouncedSave from "../hooks/useAutosave";
-import Delta from "../hooks/delta";
+import Delta from "quill-delta";
+import CustomDelta from "../hooks/delta";
 import {
   saveStatusEnum,
   dataActionEnum,
@@ -13,6 +14,7 @@ import {
 import ShareDocumentModal from "../components/DocumentPage/Modals/ShareDocumentModal";
 import VersionHistoryModal from "../components/DocumentPage/Modals/VersionHistoryModal";
 import SummaryModal from "../components/DocumentPage/Modals/SummaryModal";
+import AutocompleteDropdown from "../components/DocumentPage/AutocompleteDropdown";
 import DocumentHeader from "../components/DocumentPage/Header/DocumentpageHeader";
 import ActiveCollaborators from "../components/DocumentPage/Header/ActiveCollaborators";
 import {
@@ -39,6 +41,12 @@ export default function DocumentPage() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [autocompletePosition, setAutocompletePosition] = useState({
+    left: 0,
+    top: 0,
+  });
+  const [currentWord, setCurrentWord] = useState("");
   const [saveStatus, setSaveStatus] = useState(saveStatusEnum.SAVED);
   const [collaboratorProfiles, setCollaboratorProfiles] = useState([]);
   const [remoteCursors, setRemoteCursors] = useState({});
@@ -138,6 +146,45 @@ export default function DocumentPage() {
     });
   }, [remoteCursors, quillRef]);
 
+  // Get cursor position for autocomplete
+  const getCursorPosition = () => {
+    if (!quillRef.current) return { left: 0, top: 0 };
+
+    const selection = quillRef.current.getSelection();
+    if (!selection) return { left: 0, top: 0 };
+
+    const bounds = quillRef.current.getBounds(selection.index);
+    const editorRect = editorRef.current.getBoundingClientRect();
+
+    return {
+      left: editorRect.left + bounds.left,
+      top: editorRect.top + bounds.top + bounds.height + 5, // 5px below cursor
+    };
+  };
+
+  // Check if we should show autocomplete and get current word
+  const shouldShowAutocomplete = () => {
+    if (!quillRef.current) return { show: false, word: "" };
+
+    const selection = quillRef.current.getSelection();
+    if (!selection) return { show: false, word: "" };
+
+    const text = quillRef.current.getText();
+    const cursorPos = selection.index;
+
+    // Start at cursor position and go backwards until we find a non word character
+    let wordStart = cursorPos;
+    while (wordStart > 0 && /\w/.test(text[wordStart - 1])) {
+      wordStart--;
+    }
+
+    const word = text.slice(wordStart, cursorPos);
+
+    // Show autocomplete if we have at least 2 characters
+    const show = word.length >= 2 && /^\w+$/.test(word);
+    return { show, word };
+  };
+
   // Text change handler
   const handleTextChange = (_delta, _oldDelta, source) => {
     if (source !== "user" || !documentId || !user?.id) return;
@@ -151,7 +198,7 @@ export default function DocumentPage() {
     const deltaDiff = computeDeltaDiff(baseDelta, newDelta);
     if (!deltaDiff.ops || !deltaDiff.ops.length) return;
 
-    const delta = new Delta(deltaDiff);
+    const delta = new CustomDelta(deltaDiff);
     sendMessage({
       action: dataActionEnum.SEND,
       roomName: documentId,
@@ -161,6 +208,17 @@ export default function DocumentPage() {
     setSaveStatus(saveStatusEnum.SAVING);
     queueSave(delta);
     lastSavedDeltaRef.current = newDelta;
+
+    // Handle autocomplete
+    const { show, word } = shouldShowAutocomplete();
+    if (show) {
+      setAutocompletePosition(getCursorPosition());
+      setShowAutocomplete(true);
+      setCurrentWord(word);
+    } else {
+      setShowAutocomplete(false);
+      setCurrentWord("");
+    }
   };
 
   // Fetch and set user role
@@ -267,7 +325,7 @@ export default function DocumentPage() {
         await updateDocumentTitle(documentId, documentTitle);
         e.target.blur(); // gets rid of focus
       } catch {
-        console.log("Failed to update document title");
+        console.error("Failed to update document title");
       }
     }
   };
@@ -293,6 +351,132 @@ export default function DocumentPage() {
   const handleSummaryModal = () => {
     setShowSummaryModal(true);
   };
+
+  const handleAutocompleteSelect = (suggestion) => {
+    if (!quillRef.current || !documentId || !user?.id) return;
+
+    const selection = quillRef.current.getSelection();
+    if (!selection) return;
+
+    const text = quillRef.current.getText();
+    const cursorPos = selection.index;
+
+    if (!currentWord || currentWord.length === 0) {
+      const insertDelta = new Delta().retain(cursorPos).insert(suggestion);
+
+      // Apply to client
+      quillRef.current.updateContents(insertDelta);
+      quillRef.current.setSelection(cursorPos + suggestion.length);
+
+      // Send through websocket
+      const customInsertDelta = new CustomDelta(insertDelta.ops);
+      sendMessage({
+        action: dataActionEnum.SEND,
+        roomName: documentId,
+        message: customInsertDelta,
+      });
+
+      // Save to server
+      setSaveStatus(saveStatusEnum.SAVING);
+      queueSave(customInsertDelta);
+
+      // Update baseline
+      lastSavedDeltaRef.current = quillRef.current.getContents();
+    } else {
+      // Find the currentWord in the text near the cursor position
+      // Look backwards from cursor to find where currentWord starts
+      let wordStart = -1;
+      for (let i = cursorPos; i >= currentWord.length; i--) {
+        const potentialWord = text.slice(i - currentWord.length, i);
+        if (potentialWord === currentWord) {
+          wordStart = i - currentWord.length;
+          break;
+        }
+      }
+
+      if (wordStart === -1) {
+        const insertDelta = new Delta().retain(cursorPos).insert(suggestion);
+
+        quillRef.current.updateContents(insertDelta);
+        quillRef.current.setSelection(cursorPos + suggestion.length);
+
+        const customInsertDelta = new CustomDelta(insertDelta.ops);
+        sendMessage({
+          action: dataActionEnum.SEND,
+          roomName: documentId,
+          message: customInsertDelta,
+        });
+
+        setSaveStatus(saveStatusEnum.SAVING);
+        queueSave(customInsertDelta);
+        lastSavedDeltaRef.current = quillRef.current.getContents();
+      } else {
+        const replaceDelta = new Delta()
+          .retain(wordStart)
+          .delete(currentWord.length)
+          .insert(suggestion);
+
+        // Apply locally first
+        quillRef.current.updateContents(replaceDelta);
+        quillRef.current.setSelection(wordStart + suggestion.length);
+
+        // Send through websocket
+        const customReplaceDelta = new CustomDelta(replaceDelta.ops);
+        sendMessage({
+          action: dataActionEnum.SEND,
+          roomName: documentId,
+          message: customReplaceDelta,
+        });
+
+        // Save to server
+        setSaveStatus(saveStatusEnum.SAVING);
+        queueSave(customReplaceDelta);
+
+        // Update baseline
+        lastSavedDeltaRef.current = quillRef.current.getContents();
+      }
+    }
+
+    // Close autocomplete
+    setShowAutocomplete(false);
+    setCurrentWord("");
+  };
+
+  const handleAutocompleteClose = () => {
+    setShowAutocomplete(false);
+  };
+
+  // Handle selection changes that might affect autocomplete
+  useEffect(() => {
+    if (!quillRef.current) return;
+
+    const handleSelectionChange = (range) => {
+      if (!range) {
+        setShowAutocomplete(false);
+        return;
+      }
+
+      // Update autocomplete position based on selection
+      const { show, word } = shouldShowAutocomplete();
+      if (show) {
+        setAutocompletePosition(getCursorPosition());
+        setShowAutocomplete(true);
+        setCurrentWord(word);
+      } else {
+        setShowAutocomplete(false);
+        setCurrentWord("");
+      }
+    };
+
+    const quill = quillRef.current;
+    quill.on("selection-change", handleSelectionChange);
+
+    return () => {
+      if (quill) {
+        quill.off("selection-change", handleSelectionChange);
+      }
+    };
+  }, [quillRef]);
 
   const handleStartPreview = async (version) => {
     if (!quillRef.current) return;
@@ -366,6 +550,14 @@ export default function DocumentPage() {
         <div className="editor-container">
           <div ref={editorRef}></div>
         </div>
+        <AutocompleteDropdown
+          quillRef={quillRef}
+          isVisible={showAutocomplete}
+          onSuggestionSelect={handleAutocompleteSelect}
+          onClose={handleAutocompleteClose}
+          position={autocompletePosition}
+          currentWord={currentWord}
+        />
       </div>
       {showShareModal && (
         <ShareDocumentModal
