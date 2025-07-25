@@ -7,6 +7,7 @@ import { getUserDocuments } from "../../../utils/dataFetcher";
 import DocumentCard from "./DocumentCardC";
 import { useWS } from "../../../context/WebsocketContext";
 import { dataActionEnum } from "../../../utils/constants";
+import { useSearch } from "../../../context/SearchContext";
 import Toast from "../../../utils/toast";
 
 const HomepageBody = () => {
@@ -20,6 +21,7 @@ const HomepageBody = () => {
   const [toast, setToast] = useState("");
   const { user } = useUser();
   const { addListener } = useWS();
+  const { searchQuery } = useSearch();
 
   const loadDocuments = useCallback(async () => {
     const docs = await getUserDocuments();
@@ -31,6 +33,10 @@ const HomepageBody = () => {
       loadDocuments();
     }
   }, [user, loadDocuments]);
+
+  const filteredDocs = documents.filter((doc) =>
+    doc.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   useEffect(() => {
     const unsubscribe = addListener((data) => {
@@ -80,7 +86,7 @@ const HomepageBody = () => {
                 <p className="document-title">Blank document</p>
               </div>
             </div>
-            {documents.map((doc) => (
+            {filteredDocs.map((doc) => (
               <DocumentCard
                 key={doc.id}
                 doc={doc}
