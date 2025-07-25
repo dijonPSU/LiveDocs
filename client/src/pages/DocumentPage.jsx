@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useUser } from "../hooks/useUser";
 import { useWS } from "../context/WebsocketContext";
 import useQuillEditor from "../hooks/useQuill";
@@ -29,14 +29,12 @@ import "quill/dist/quill.snow.css";
 import "../pages/styles/DocumentPage.css";
 
 export default function DocumentPage() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { state } = location;
-  const { documentName = "Untitled Document", documentId } = state || {};
+  const { id: documentId } = useParams();
+  const [documentTitle, setDocumentTitle] = useState("Untitled Document");
   const { user, loading } = useUser();
   const { sendMessage, addListener, connected } = useWS();
 
-  const [documentTitle, setDocumentTitle] = useState(documentName);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false);
   const [saveStatus, setSaveStatus] = useState(saveStatusEnum.SAVED);
@@ -233,10 +231,12 @@ export default function DocumentPage() {
   // Load document content
   useEffect(() => {
     const loadContent = async () => {
-      if (!quillRef.current || !documentId) return;
       const content = await getDocumentContent(documentId);
       if (!content) return;
-      const { snapshot, patches } = content;
+      const { title, snapshot, patches } = content;
+
+      // set document title and document content
+      setDocumentTitle(title || "Untitled Document");
       quillRef.current.setContents(snapshot || []);
       if (patches?.length) {
         patches.forEach((patch) => {
@@ -296,7 +296,10 @@ export default function DocumentPage() {
       setOriginalContent(quillRef.current.getContents());
 
       // Fetch and load the version content
-      const versionContent = await getVersionContent(documentId, version.versionNumber);
+      const versionContent = await getVersionContent(
+        documentId,
+        version.versionNumber,
+      );
       if (versionContent) {
         quillRef.current.setContents(new Delta(versionContent));
       }
@@ -340,8 +343,12 @@ export default function DocumentPage() {
       {isPreviewMode && (
         <div className="preview-banner">
           <div className="preview-info">
-            <span className="preview-label">Previewing Version #{previewVersion?.versionNumber}</span>
-            <span className="preview-description">You are viewing a previous version of this document</span>
+            <span className="preview-label">
+              Previewing Version #{previewVersion?.versionNumber}
+            </span>
+            <span className="preview-description">
+              You are viewing a previous version of this document
+            </span>
           </div>
           <button className="btn-stop-preview" onClick={handleStopPreview}>
             Stop Preview

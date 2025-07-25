@@ -79,9 +79,7 @@ export default function DocumentHeader({
             "No Avatar"
           )}
         </div>
-        {collaboratorProfiles?.length > 0 && (
-          <div className="collaborators">{collaboratorProfiles}</div>
-        )}
+        {collaboratorProfiles}
       </div>
     </div>
   );

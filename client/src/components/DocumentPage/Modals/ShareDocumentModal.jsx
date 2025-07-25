@@ -116,13 +116,19 @@ export default function ShareDocumentModal({ closeModal, documentId }) {
               <ul>
                 {collaborators.map((data) => (
                   <li key={data.user.id} className="collaborator-item">
-                    <img
-                      src={data.user.image}
-                      alt={data.user.email}
-                      className="collaborator-avatar"
-                    />
-                    {data.user.email}{" "}
-                    {data.user.email === globalUserEmail && "(You)"}
+                    <div className="collaborator-info">
+                      <img
+                        src={data.user.image}
+                        alt={data.user.email}
+                        className="collaborator-avatar"
+                      />
+                      <span className="collaborator-email">
+                        {data.user.email}
+                        {data.user.email === globalUserEmail && (
+                          <span className="collaborator-you">(You)</span>
+                        )}
+                      </span>
+                    </div>
                     <select
                       value={data.role}
                       disabled={data.user.email === globalUserEmail}
